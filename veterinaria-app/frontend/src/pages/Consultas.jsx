@@ -59,9 +59,10 @@ export default function Consultas() {
           placeholder="DNI del dueño"
           value={dni}
           onChange={e => setDni(e.target.value)}
-          style={{ marginRight: 8 }}
+          className="form-control d-inline-block"
+          style={{ width: 200, marginRight: 8 }}
         />
-        <button onClick={buscarMascotas} disabled={!dni}>Buscar Mascotas</button>
+        <button onClick={buscarMascotas} disabled={!dni} className="btn btn-primary">Buscar Mascotas</button>
       </div>
 
       {/* Paso 2: Mostrar mascotas del dueño */}
@@ -92,12 +93,22 @@ export default function Consultas() {
       {/* Paso 3: Formulario de consulta */}
       {selectedMascotaId && (
         <div>
-          <form onSubmit={handleAdd}>
-            <input name="fecha" type="date" onChange={handleChange} value={form.fecha} required />
-            <input name="sintomas" placeholder="Síntomas" onChange={handleChange} value={form.sintomas} required />
-            <input name="diagnostico" placeholder="Diagnóstico" onChange={handleChange} value={form.diagnostico} required />
-            <input name="tratamiento" placeholder="Tratamiento" onChange={handleChange} value={form.tratamiento} required />
-            <button>Agregar Consulta</button>
+          <form onSubmit={handleAdd} className="row g-2 align-items-center">
+            <div className="col">
+              <input name="fecha" type="date" className="form-control" onChange={handleChange} value={form.fecha} required />
+            </div>
+            <div className="col">
+              <input name="sintomas" placeholder="Síntomas" className="form-control" onChange={handleChange} value={form.sintomas} required />
+            </div>
+            <div className="col">
+              <input name="diagnostico" placeholder="Diagnóstico" className="form-control" onChange={handleChange} value={form.diagnostico} required />
+            </div>
+            <div className="col">
+              <input name="tratamiento" placeholder="Tratamiento" className="form-control" onChange={handleChange} value={form.tratamiento} required />
+            </div>
+            <div className="col-auto">
+              <button className="btn btn-success">Agregar Consulta</button>
+            </div>
           </form>
         </div>
       )}

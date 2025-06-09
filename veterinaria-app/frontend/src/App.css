@@ -4,59 +4,24 @@
   margin: auto;
 }
 
-.container {
-  background: var(--card-bg);
+/* Opcional: Personaliza tus cards si quieres */
+.card {
   border-radius: var(--border-radius);
-  padding: 2rem;
   box-shadow: var(--box-shadow);
-  margin-top: 2rem;
+  background: var(--card-bg);
 }
 
+/* Títulos con tu color secundario */
 h2, h3 {
-  margin-bottom: 1rem;
   color: var(--secondary-color);
 }
 
-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-input {
-  flex: 1 1 200px;
-  padding: 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: var(--border-radius);
-  transition: border var(--transition);
-}
-
-input:focus {
-  border-color: var(--primary-color);
-  outline: none;
-}
-
-button {
-  padding: 0.75rem 1.5rem;
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  transition: background-color var(--transition);
-}
-
-button:hover {
-  background-color: var(--secondary-color);
-}
-
-ul {
+/* Opcional: Personaliza listas si quieres */
+ul.custom-list {
   list-style: none;
   padding-left: 0;
 }
-
-li {
+ul.custom-list li {
   padding: 0.75rem 1rem;
   background-color: #f9f9f9;
   margin-bottom: 0.5rem;

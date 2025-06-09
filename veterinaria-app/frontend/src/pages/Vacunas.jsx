@@ -71,37 +71,34 @@ export default function Vacunas() {
   };
 
   return (
-    <div>
-      <h3>Registrar Vacunación</h3>
+    <div className="container">
+      <h3 className="mb-4">Registrar Vacunación</h3>
       {/* Paso 1: Buscar dueño por DNI */}
-      <div style={{ marginBottom: 16 }}>
+      <div className="mb-3 d-flex align-items-center">
         <input
           type="text"
           placeholder="DNI del dueño"
           value={dni}
           onChange={e => setDni(e.target.value)}
-          style={{ marginRight: 8 }}
+          className="form-control me-2"
+          style={{ maxWidth: 220 }}
         />
-        <button onClick={buscarMascotas} disabled={!dni}>Buscar Mascotas</button>
+        <button onClick={buscarMascotas} disabled={!dni} className="btn btn-primary">
+          Buscar Mascotas
+        </button>
       </div>
 
       {/* Paso 2: Mostrar mascotas del dueño */}
       {mascotas.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
+        <div className="mb-3">
           <strong>Seleccione una mascota:</strong>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+          <ul className="list-group mt-2">
             {mascotas.map(m => (
               <li
                 key={m.id}
                 onClick={() => setSelectedMascotaId(m.id)}
-                style={{
-                  cursor: 'pointer',
-                  padding: '8px',
-                  border: m.id === selectedMascotaId ? '2px solid blue' : '1px solid #ccc',
-                  marginBottom: '6px',
-                  borderRadius: '4px',
-                  backgroundColor: m.id === selectedMascotaId ? '#eef4ff' : 'white'
-                }}
+                className={`list-group-item list-group-item-action${m.id === selectedMascotaId ? ' active' : ''}`}
+                style={{ cursor: 'pointer' }}
               >
                 {m.nombre} - {m.raza} - {m.especie}
               </li>
@@ -112,34 +109,45 @@ export default function Vacunas() {
 
       {/* Paso 3: Formulario de vacunación */}
       {selectedMascotaId && (
-        <form onSubmit={handleAdd} style={{ marginBottom: 16 }}>
-          <select
-            name="vacuna_id"
-            value={form.vacuna_id}
-            onChange={handleChange}
-            required
-          >
-            <option value="">Seleccione vacuna</option>
-            {catalogo.map(v => (
-              <option key={v.id} value={v.id}>
-                {v.nombre} ({v.especie_destino}) - S/ {v.precio}
-              </option>
-            ))}
-          </select>
-          <input
-            type="date"
-            name="fecha_aplicacion"
-            onChange={handleChange}
-            value={form.fecha_aplicacion}
-            required
-          />
-          <input
-            type="date"
-            name="fecha_vencimiento"
-            onChange={handleChange}
-            value={form.fecha_vencimiento}
-          />
-          <button>Registrar Vacuna</button>
+        <form onSubmit={handleAdd} className="row g-2 align-items-center mb-4">
+          <div className="col-md-4">
+            <select
+              name="vacuna_id"
+              value={form.vacuna_id}
+              onChange={handleChange}
+              className="form-select"
+              required
+            >
+              <option value="">Seleccione vacuna</option>
+              {catalogo.map(v => (
+                <option key={v.id} value={v.id}>
+                  {v.nombre} ({v.especie_destino}) - S/ {v.precio}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="col-md-3">
+            <input
+              type="date"
+              name="fecha_aplicacion"
+              className="form-control"
+              onChange={handleChange}
+              value={form.fecha_aplicacion}
+              required
+            />
+          </div>
+          <div className="col-md-3">
+            <input
+              type="date"
+              name="fecha_vencimiento"
+              className="form-control"
+              onChange={handleChange}
+              value={form.fecha_vencimiento}
+            />
+          </div>
+          <div className="col-md-2">
+            <button className="btn btn-success w-100">Registrar Vacuna</button>
+          </div>
         </form>
       )}
 
@@ -147,18 +155,26 @@ export default function Vacunas() {
       {selectedMascotaId && (
         <div>
           <h4>Vacunas Aplicadas</h4>
-          <ul>
-            {vacunasAplicadas.map(v => (
-              <li key={v.id}>
-                {v.nombre_vacuna} - Aplicada: {v.fecha_aplicacion?.slice(0,10)} - Vence: {v.fecha_vencimiento?.slice(0,10)}
-                {v.fabricante && (
-                  <span style={{ marginLeft: 10, color: '#555', fontSize: '0.95em' }}>
-                    ({v.fabricante})
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
+          <table className="table table-striped">
+            <thead>
+              <tr>
+                <th>Vacuna</th>
+                <th>Aplicada</th>
+                <th>Vence</th>
+                <th>Fabricante</th>
+              </tr>
+            </thead>
+            <tbody>
+              {vacunasAplicadas.map(v => (
+                <tr key={v.id}>
+                  <td>{v.nombre_vacuna}</td>
+                  <td>{v.fecha_aplicacion?.slice(0,10)}</td>
+                  <td>{v.fecha_vencimiento?.slice(0,10)}</td>
+                  <td>{v.fabricante}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

@@ -12,9 +12,9 @@ export default function Login() {
     try {
       const res = await login(form);
       localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user)); // <-- Guarda el usuario con su rol
+      localStorage.setItem('user', JSON.stringify(res.data.user));
       alert('Bienvenido ' + res.data.user.nombres);
-      window.location.href = '/mascotas'; // redirigir a mascotas
+      window.location.href = '/mascotas';
     } catch (err) {
       alert('Error: ' + (err.response?.data?.error || err.message));
     }
@@ -22,35 +22,39 @@ export default function Login() {
 
   return (
     <div className="container mt-5" style={{ maxWidth: '400px' }}>
-      <h2 className="text-center mb-4">Iniciar sesión</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <input
-            name="usuario"
-            placeholder="Usuario"
-            className="form-control"
-            onChange={handleChange}
-            required
-          />
+      <div className="card shadow">
+        <div className="card-body">
+          <h2 className="text-center mb-4">Iniciar sesión</h2>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-3">
+              <input
+                name="usuario"
+                placeholder="Usuario"
+                className="form-control"
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="mb-3">
+              <input
+                type="password"
+                name="password"
+                placeholder="Contraseña"
+                className="form-control"
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <button className="btn btn-primary w-100">Iniciar sesión</button>
+          </form>
+          <p className="text-center mt-3">
+            ¿No tienes una cuenta?{' '}
+            <Link to="/register" className="text-decoration-none">
+              Regístrate aquí
+            </Link>
+          </p>
         </div>
-        <div className="mb-3">
-          <input
-            type="password"
-            name="password"
-            placeholder="Contraseña"
-            className="form-control"
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <button className="btn btn-primary w-100">Iniciar sesión</button>
-      </form>
-      <p className="text-center mt-3">
-        ¿No tienes una cuenta?{' '}
-        <Link to="/register" className="text-decoration-none">
-          Regístrate aquí
-        </Link>
-      </p>
+      </div>
     </div>
   );
 }

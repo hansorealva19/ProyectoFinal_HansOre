@@ -26,19 +26,42 @@ export default function Register() {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input name="nombres" placeholder="Nombres" onChange={handleChange} required/>
-      <input name="apellidos" placeholder="Apellidos" onChange={handleChange} required/>
-      <input type="date" name="fecha_nacimiento" onChange={handleChange} required/>
-      <input type="email" name="correo" placeholder="Correo" onChange={handleChange} required/>
-      <input name="celular" placeholder="Celular" onChange={handleChange} required/>
-      <input name="usuario" placeholder="Usuario" onChange={handleChange} required/>
-      <input type="password" name="password" placeholder="Contraseña" onChange={handleChange} required/>
-      <select name="rol" onChange={handleChange} value={form.rol}>
-        <option value="dueño">Dueño</option>
-        <option value="veterinario">Veterinario</option>
-      </select>
-      <button>Registrar</button>
-    </form>
+    <div className="container mt-5" style={{ maxWidth: '500px' }}>
+      <div className="card shadow">
+        <div className="card-body">
+          <h2 className="text-center mb-4">Registro</h2>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-3">
+              <input name="nombres" placeholder="Nombres" className="form-control" onChange={handleChange} required/>
+            </div>
+            <div className="mb-3">
+              <input name="apellidos" placeholder="Apellidos" className="form-control" onChange={handleChange} required/>
+            </div>
+            <div className="mb-3">
+              <input type="date" name="fecha_nacimiento" className="form-control" onChange={handleChange} required/>
+            </div>
+            <div className="mb-3">
+              <input type="email" name="correo" placeholder="Correo" className="form-control" onChange={handleChange} required/>
+            </div>
+            <div className="mb-3">
+              <input name="celular" placeholder="Celular" className="form-control" onChange={handleChange} required/>
+            </div>
+            <div className="mb-3">
+              <input name="usuario" placeholder="Usuario" className="form-control" onChange={handleChange} required/>
+            </div>
+            <div className="mb-3">
+              <input type="password" name="password" placeholder="Contraseña" className="form-control" onChange={handleChange} required/>
+            </div>
+            <div className="mb-3">
+              <select name="rol" className="form-select" onChange={handleChange} value={form.rol}>
+                <option value="dueño">Dueño</option>
+                <option value="veterinario">Veterinario</option>
+              </select>
+            </div>
+            <button className="btn btn-success w-100">Registrar</button>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 }

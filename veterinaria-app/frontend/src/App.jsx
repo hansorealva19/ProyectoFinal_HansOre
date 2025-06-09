@@ -6,6 +6,7 @@ import Mascotas from './pages/Mascotas';
 import Consultas from './pages/Consultas';
 import Vacunas from './pages/Vacunas';
 import Suscripciones from './pages/Suscripciones';
+import HistoriaClinica from './pages/HistoriaClinica';
 
 import { useState } from 'react';
 
@@ -35,6 +36,15 @@ function App() {
             element={
               <PrivateRoute>
                 <Mascotas setSelectedMascotaId={setSelectedMascotaId} />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="mascotas/:id/historia"
+            element={
+              <PrivateRoute>
+                <HistoriaClinica />
               </PrivateRoute>
             }
           />
