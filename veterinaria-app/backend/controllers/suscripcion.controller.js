@@ -3,12 +3,12 @@ const pool = require('../db');
 
 exports.addSuscripcion = async (req, res) => {
   try {
-    const { mascota_id, tipo, fecha_inicio, fecha_fin } = req.body;
+    const { mascota_id, tipo_id, fecha_inicio, fecha_fin } = req.body;
 
     await pool.query(
-      `INSERT INTO suscripcion (mascota_id, tipo, fecha_inicio, fecha_fin)
+      `INSERT INTO suscripcion (mascota_id, tipo_id, fecha_inicio, fecha_fin)
        VALUES (?, ?, ?, ?)`,
-      [mascota_id, tipo, fecha_inicio, fecha_fin]
+      [mascota_id, tipo_id, fecha_inicio, fecha_fin]
     );
 
     res.status(201).json({ message: 'Suscripción agregada' });

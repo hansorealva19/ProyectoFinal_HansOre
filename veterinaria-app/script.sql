@@ -91,7 +91,22 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`consulta_veterinaria` (
     REFERENCES `veterinaria_db`.`usuario` (`id`)
     ON DELETE CASCADE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 10
+AUTO_INCREMENT = 12
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `veterinaria_db`.`tipo_suscripcion`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `veterinaria_db`.`tipo_suscripcion` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `nombre` VARCHAR(50) NOT NULL,
+  `descripcion` TEXT NULL DEFAULT NULL,
+  `precio` DECIMAL(10,2) NOT NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 4
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -102,12 +117,18 @@ COLLATE = utf8mb4_0900_ai_ci;
 CREATE TABLE IF NOT EXISTS `veterinaria_db`.`suscripcion` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `mascota_id` INT NOT NULL,
+  `tipo_id` INT NOT NULL,
   `fecha_inicio` DATETIME NOT NULL,
   `fecha_fin` DATETIME NOT NULL,
   `estado` ENUM('activa', 'inactiva', 'vencida') NOT NULL DEFAULT 'activa',
   `created_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   INDEX `mascota_id` (`mascota_id` ASC) VISIBLE,
+  INDEX `fk_suscripcion_tipo` (`tipo_id` ASC) VISIBLE,
+  CONSTRAINT `fk_suscripcion_tipo`
+    FOREIGN KEY (`tipo_id`)
+    REFERENCES `veterinaria_db`.`tipo_suscripcion` (`id`)
+    ON DELETE RESTRICT,
   CONSTRAINT `suscripcion_ibfk_1`
     FOREIGN KEY (`mascota_id`)
     REFERENCES `veterinaria_db`.`mascota` (`id`)
@@ -141,6 +162,31 @@ COLLATE = utf8mb4_0900_ai_ci;
 
 
 -- -----------------------------------------------------
+-- Table `veterinaria_db`.`vacuna_catalogo`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `veterinaria_db`.`vacuna_catalogo` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `nombre` VARCHAR(100) NOT NULL,
+  `descripcion` TEXT NULL DEFAULT NULL,
+  `fabricante` VARCHAR(100) NULL DEFAULT NULL,
+  `precio` DECIMAL(10,2) NULL DEFAULT NULL,
+  `dosis` VARCHAR(50) NULL DEFAULT NULL,
+  `especie_destino` VARCHAR(50) NULL DEFAULT NULL,
+  `via_administracion` VARCHAR(50) NULL DEFAULT NULL,
+  `edad_minima` INT NULL DEFAULT NULL,
+  `periodicidad` VARCHAR(50) NULL DEFAULT NULL,
+  `lote` VARCHAR(50) NULL DEFAULT NULL,
+  `fecha_vencimiento` DATE NULL DEFAULT NULL,
+  `created_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 9
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
 -- Table `veterinaria_db`.`vacuna_mascota`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `veterinaria_db`.`vacuna_mascota` (
@@ -152,21 +198,22 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`vacuna_mascota` (
   `veterinario_id` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `mascota_id` (`mascota_id` ASC) VISIBLE,
-  INDEX `vacuna_id` (`vacuna_id` ASC) VISIBLE,
   INDEX `veterinario_id` (`veterinario_id` ASC) VISIBLE,
+  INDEX `vacuna_mascota_ibfk_2` (`vacuna_id` ASC) VISIBLE,
   CONSTRAINT `vacuna_mascota_ibfk_1`
     FOREIGN KEY (`mascota_id`)
     REFERENCES `veterinaria_db`.`mascota` (`id`)
     ON DELETE CASCADE,
   CONSTRAINT `vacuna_mascota_ibfk_2`
     FOREIGN KEY (`vacuna_id`)
-    REFERENCES `veterinaria_db`.`vacuna` (`id`)
+    REFERENCES `veterinaria_db`.`vacuna_catalogo` (`id`)
     ON DELETE CASCADE,
   CONSTRAINT `vacuna_mascota_ibfk_3`
     FOREIGN KEY (`veterinario_id`)
     REFERENCES `veterinaria_db`.`usuario` (`id`)
     ON DELETE CASCADE)
 ENGINE = InnoDB
+AUTO_INCREMENT = 4
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 

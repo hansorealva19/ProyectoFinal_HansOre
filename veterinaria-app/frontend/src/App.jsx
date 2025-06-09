@@ -21,6 +21,9 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Redirige la raíz al login */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+
         <Route path="/" element={<Layout />}>
           {/* Rutas públicas */}
           <Route path="login" element={<Login />} />
@@ -63,7 +66,7 @@ function App() {
             }
           />
 
-          {/* Redirigir al login si ruta no existe */}
+          {/* Redirigir cualquier ruta desconocida al login */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Route>
       </Routes>
