@@ -10,6 +10,15 @@ export default function Suscripciones() {
   const [suscripcionesMascota, setSuscripcionesMascota] = useState([]);
   const [todasSuscripciones, setTodasSuscripciones] = useState([]);
 
+  // Modal para reactivar
+  const [showModal, setShowModal] = useState(false);
+  const [suscripcionAReactivar, setSuscripcionAReactivar] = useState(null);
+  const [formReactivar, setFormReactivar] = useState({
+    tipo_id: '',
+    fecha_inicio: '',
+    fecha_fin: ''
+  });
+
   // Buscar mascotas por DNI
   const buscarMascotas = async () => {
     try {
@@ -87,9 +96,104 @@ export default function Suscripciones() {
     }
   };
 
+  // Abrir modal para reactivar
+  const abrirModalReactivar = (suscripcion) => {
+    setSuscripcionAReactivar(suscripcion);
+    setFormReactivar({
+      tipo_id: suscripcion.tipo_id || '',
+      fecha_inicio: '',
+      fecha_fin: ''
+    });
+    setShowModal(true);
+  };
+
+  // Reactivar desde el modal
+  const handleReactivar = async () => {
+    try {
+      if (!formReactivar.tipo_id || !formReactivar.fecha_inicio || !formReactivar.fecha_fin) {
+        alert('Completa todos los campos');
+        return;
+      }
+      await api.patch(`/suscripciones/${suscripcionAReactivar.id}/activar`, {
+        nuevaFechaFin: formReactivar.fecha_fin,
+        tipo_id: formReactivar.tipo_id,
+        fecha_inicio: formReactivar.fecha_inicio
+      });
+      setShowModal(false);
+      setSuscripcionAReactivar(null);
+      setFormReactivar({ tipo_id: '', fecha_inicio: '', fecha_fin: '' });
+      // Refresca las tablas
+      if (selectedMascotaId) {
+        const res = await api.get(`/suscripciones/${selectedMascotaId}`);
+        setSuscripcionesMascota(res.data);
+      }
+      const all = await api.get('/suscripciones');
+      setTodasSuscripciones(all.data);
+    } catch (e) {
+      alert('Error al reactivar suscripción'+e.message);
+    }
+  };
+
   return (
     <div className="container">
       <h2 className="mb-4">Gestión de Suscripciones</h2>
+
+      {/* MODAL */}
+      {showModal && (
+        <div className="modal show" style={{
+          display: 'block', background: 'rgba(0,0,0,0.5)'
+        }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Reactivar Suscripción</h5>
+                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label className="form-label">Tipo de Suscripción</label>
+                  <select
+                    className="form-select"
+                    value={formReactivar.tipo_id}
+                    onChange={e => setFormReactivar(f => ({ ...f, tipo_id: e.target.value }))}
+                    required
+                  >
+                    <option value="">Seleccione tipo</option>
+                    {tipos.map(t => (
+                      <option key={t.id} value={t.id}>{t.nombre} - S/ {t.precio}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Fecha de Inicio</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={formReactivar.fecha_inicio}
+                    onChange={e => setFormReactivar(f => ({ ...f, fecha_inicio: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Fecha de Fin</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={formReactivar.fecha_fin}
+                    min={formReactivar.fecha_inicio || new Date().toISOString().slice(0,10)}
+                    onChange={e => setFormReactivar(f => ({ ...f, fecha_fin: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
+                <button className="btn btn-success" onClick={handleReactivar}>Reactivar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sección: Todas las suscripciones */}
       <section className="mb-5">
@@ -118,7 +222,18 @@ export default function Suscripciones() {
                   <td>S/ {s.precio}</td>
                   <td>{s.fecha_inicio?.slice(0,10)}</td>
                   <td>{s.fecha_fin?.slice(0,10)}</td>
-                  <td>{s.estado}</td>
+                  <td>
+                    {(s.estado === 'inactiva' || s.estado === 'vencida') ? (
+                      <button
+                        className="btn btn-sm btn-success"
+                        onClick={() => abrirModalReactivar(s)}
+                      >
+                        Activar
+                      </button>
+                    ) : (
+                      s.estado
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -224,10 +339,21 @@ export default function Suscripciones() {
               <tbody>
                 {suscripcionesMascota.map(s => (
                   <tr key={s.id}>
-                    <td>{tipos.find(t => t.id === s.tipo_id)?.nombre || s.tipo_id}</td>
+                    <td>{tipos.find(t => t.id === s.tipo_id)?.nombre || s.tipo_nombre || s.tipo_id}</td>
                     <td>{s.fecha_inicio?.slice(0,10)}</td>
                     <td>{s.fecha_fin?.slice(0,10)}</td>
-                    <td>{s.estado}</td>
+                    <td>
+                      {(s.estado === 'inactiva' || s.estado === 'vencida') ? (
+                        <button
+                          className="btn btn-sm btn-success"
+                          onClick={() => abrirModalReactivar(s)}
+                        >
+                          Activar
+                        </button>
+                      ) : (
+                        s.estado
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

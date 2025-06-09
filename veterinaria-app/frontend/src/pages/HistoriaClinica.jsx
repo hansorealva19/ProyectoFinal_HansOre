@@ -28,7 +28,7 @@ export default function HistoriaClinica() {
         const resSuscripciones = await api.get(`/suscripciones/${id}`);
         setSuscripciones(resSuscripciones.data);
       } catch (err) {
-        alert('Error al cargar historia clínica' + err.message);
+        alert('Error al cargar historia clínica: ' + err.message);
       }
     };
     fetchAll();
@@ -39,7 +39,7 @@ export default function HistoriaClinica() {
   return (
     <div className="container mt-4">
       <Link to="/mascotas" className="btn btn-link mb-3">&larr; Volver a Mascotas</Link>
-      <h2>Historia Clínica de {mascota.nombre}</h2>
+      <h2 className="mb-4">Historia Clínica de {mascota.nombre}</h2>
       <div className="card mb-4">
         <div className="card-body">
           <h5 className="card-title">Datos de la Mascota</h5>
@@ -59,28 +59,30 @@ export default function HistoriaClinica() {
         {consultas.length === 0 ? (
           <div className="text-muted">Sin consultas registradas.</div>
         ) : (
-          <table className="table table-bordered">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Síntomas</th>
-                <th>Diagnóstico</th>
-                <th>Tratamiento</th>
-                <th>Veterinario</th>
-              </tr>
-            </thead>
-            <tbody>
-              {consultas.map(c => (
-                <tr key={c.id}>
-                  <td>{c.fecha?.slice(0,10)}</td>
-                  <td>{c.sintomas}</td>
-                  <td>{c.diagnostico}</td>
-                  <td>{c.tratamiento}</td>
-                  <td>{c.nombre_veterinario}</td>
+          <div className="table-responsive">
+            <table className="table table-bordered table-striped">
+              <thead className="table-light">
+                <tr>
+                  <th>Fecha</th>
+                  <th>Síntomas</th>
+                  <th>Diagnóstico</th>
+                  <th>Tratamiento</th>
+                  <th>Veterinario</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {consultas.map(c => (
+                  <tr key={c.id}>
+                    <td>{c.fecha?.slice(0,10)}</td>
+                    <td>{c.sintomas}</td>
+                    <td>{c.diagnostico}</td>
+                    <td>{c.tratamiento}</td>
+                    <td>{c.nombre_veterinario}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -89,26 +91,28 @@ export default function HistoriaClinica() {
         {vacunas.length === 0 ? (
           <div className="text-muted">Sin vacunas registradas.</div>
         ) : (
-          <table className="table table-bordered">
-            <thead>
-              <tr>
-                <th>Vacuna</th>
-                <th>Aplicada</th>
-                <th>Vence</th>
-                <th>Fabricante</th>
-              </tr>
-            </thead>
-            <tbody>
-              {vacunas.map(v => (
-                <tr key={v.id}>
-                  <td>{v.nombre_vacuna}</td>
-                  <td>{v.fecha_aplicacion?.slice(0,10)}</td>
-                  <td>{v.fecha_vencimiento?.slice(0,10)}</td>
-                  <td>{v.fabricante}</td>
+          <div className="table-responsive">
+            <table className="table table-bordered table-striped">
+              <thead className="table-light">
+                <tr>
+                  <th>Vacuna</th>
+                  <th>Aplicada</th>
+                  <th>Vence</th>
+                  <th>Fabricante</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {vacunas.map(v => (
+                  <tr key={v.id}>
+                    <td>{v.nombre_vacuna}</td>
+                    <td>{v.fecha_aplicacion?.slice(0,10)}</td>
+                    <td>{v.fecha_vencimiento?.slice(0,10)}</td>
+                    <td>{v.fabricante}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -117,26 +121,28 @@ export default function HistoriaClinica() {
         {suscripciones.length === 0 ? (
           <div className="text-muted">Sin suscripciones registradas.</div>
         ) : (
-          <table className="table table-bordered">
-            <thead>
-              <tr>
-                <th>Tipo</th>
-                <th>Inicio</th>
-                <th>Fin</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {suscripciones.map(s => (
-                <tr key={s.id}>
-                  <td>{s.tipo_nombre || s.tipo_id}</td>
-                  <td>{s.fecha_inicio?.slice(0,10)}</td>
-                  <td>{s.fecha_fin?.slice(0,10)}</td>
-                  <td>{s.estado}</td>
+          <div className="table-responsive">
+            <table className="table table-bordered table-striped">
+              <thead className="table-light">
+                <tr>
+                  <th>Tipo</th>
+                  <th>Inicio</th>
+                  <th>Fin</th>
+                  <th>Estado</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {suscripciones.map(s => (
+                  <tr key={s.id}>
+                    <td>{s.tipo_nombre || s.tipo_id}</td>
+                    <td>{s.fecha_inicio?.slice(0,10)}</td>
+                    <td>{s.fecha_fin?.slice(0,10)}</td>
+                    <td>{s.estado}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

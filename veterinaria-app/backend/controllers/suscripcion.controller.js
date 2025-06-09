@@ -1,16 +1,13 @@
-// backend/controllers/suscripcion.controller.js
 const pool = require('../db');
 
 exports.addSuscripcion = async (req, res) => {
   try {
     const { mascota_id, tipo_id, fecha_inicio, fecha_fin } = req.body;
-
     await pool.query(
       `INSERT INTO suscripcion (mascota_id, tipo_id, fecha_inicio, fecha_fin)
        VALUES (?, ?, ?, ?)`,
       [mascota_id, tipo_id, fecha_inicio, fecha_fin]
     );
-
     res.status(201).json({ message: 'Suscripción agregada' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -20,8 +17,18 @@ exports.addSuscripcion = async (req, res) => {
 exports.getSuscripcionesByMascota = async (req, res) => {
   try {
     const { mascotaId } = req.params;
+    // Actualiza las vencidas antes de consultar
+    await pool.query(
+      `UPDATE suscripcion SET estado = 'vencida'
+       WHERE fecha_fin < NOW() AND estado = 'activa' AND mascota_id = ?`,
+      [mascotaId]
+    );
     const [rows] = await pool.query(
-      `SELECT * FROM suscripcion WHERE mascota_id = ? ORDER BY fecha_inicio DESC`,
+      `SELECT s.*, t.nombre AS tipo_nombre
+       FROM suscripcion s
+       JOIN tipo_suscripcion t ON s.tipo_id = t.id
+       WHERE s.mascota_id = ?
+       ORDER BY s.fecha_inicio DESC`,
       [mascotaId]
     );
     res.json(rows);
@@ -32,6 +39,11 @@ exports.getSuscripcionesByMascota = async (req, res) => {
 
 exports.getAllSuscripciones = async (req, res) => {
   try {
+    // Actualiza las vencidas antes de consultar
+    await pool.query(
+      `UPDATE suscripcion SET estado = 'vencida'
+       WHERE fecha_fin < NOW() AND estado = 'activa'`
+    );
     const [rows] = await pool.query(`
       SELECT s.*, 
              m.nombre AS nombre_mascota, 
@@ -46,6 +58,41 @@ exports.getAllSuscripciones = async (req, res) => {
       ORDER BY s.fecha_inicio DESC
     `);
     res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.activarSuscripcion = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nuevaFechaFin, tipo_id, fecha_inicio } = req.body;
+
+    // Consulta el estado actual y fecha_fin
+    const [rows] = await pool.query(
+      `SELECT estado FROM suscripcion WHERE id = ?`,
+      [id]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Suscripción no encontrada' });
+    }
+    const { estado } = rows[0];
+
+    if (estado === 'vencida' || estado === 'inactiva') {
+      if (!nuevaFechaFin || !tipo_id || !fecha_inicio) {
+        return res.status(400).json({ error: 'Debe ingresar tipo, fecha de inicio y fecha de fin para reactivar.' });
+      }
+      await pool.query(
+        `UPDATE suscripcion SET estado = 'activa', tipo_id = ?, fecha_inicio = ?, fecha_fin = ? WHERE id = ?`,
+        [tipo_id, fecha_inicio, nuevaFechaFin, id]
+      );
+    } else {
+      await pool.query(
+        `UPDATE suscripcion SET estado = 'activa' WHERE id = ?`,
+        [id]
+      );
+    }
+    res.json({ message: 'Suscripción activada' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
