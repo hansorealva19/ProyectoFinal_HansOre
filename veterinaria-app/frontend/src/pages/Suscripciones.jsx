@@ -10,6 +10,9 @@ export default function Suscripciones() {
   const [suscripcionesMascota, setSuscripcionesMascota] = useState([]);
   const [todasSuscripciones, setTodasSuscripciones] = useState([]);
 
+  // Filtro de estado
+  const [filtroEstado, setFiltroEstado] = useState('activa');
+
   // Modal para reactivar
   const [showModal, setShowModal] = useState(false);
   const [suscripcionAReactivar, setSuscripcionAReactivar] = useState(null);
@@ -134,6 +137,11 @@ export default function Suscripciones() {
     }
   };
 
+  // Filtro de suscripciones para la tabla principal
+  const suscripcionesFiltradas = filtroEstado === 'todas'
+    ? todasSuscripciones
+    : todasSuscripciones.filter(s => s.estado === filtroEstado);
+
   return (
     <div className="container">
       <h2 className="mb-4">Gestión de Suscripciones</h2>
@@ -198,6 +206,20 @@ export default function Suscripciones() {
       {/* Sección: Todas las suscripciones */}
       <section className="mb-5">
         <h3>Todas las Suscripciones</h3>
+        <div className="mb-3 d-flex align-items-center">
+          <label className="me-2">Filtrar por estado:</label>
+          <select
+            className="form-select"
+            style={{ width: 180, display: 'inline-block' }}
+            value={filtroEstado}
+            onChange={e => setFiltroEstado(e.target.value)}
+          >
+            <option value="activa">Activas</option>
+            <option value="inactiva">Inactivas</option>
+            <option value="vencida">Vencidas</option>
+            <option value="todas">Todas</option>
+          </select>
+        </div>
         <div className="table-responsive">
           <table className="table table-striped table-bordered">
             <thead className="table-light">
@@ -210,10 +232,11 @@ export default function Suscripciones() {
                 <th>Inicio</th>
                 <th>Fin</th>
                 <th>Estado</th>
+                <th>Acción</th>
               </tr>
             </thead>
             <tbody>
-              {todasSuscripciones.map(s => (
+              {suscripcionesFiltradas.map(s => (
                 <tr key={s.id}>
                   <td>{s.nombre_mascota}</td>
                   <td>{s.nombre_dueno}</td>
@@ -222,16 +245,15 @@ export default function Suscripciones() {
                   <td>S/ {s.precio}</td>
                   <td>{s.fecha_inicio?.slice(0,10)}</td>
                   <td>{s.fecha_fin?.slice(0,10)}</td>
+                  <td>{s.estado}</td>
                   <td>
-                    {(s.estado === 'inactiva' || s.estado === 'vencida') ? (
+                    {(s.estado === 'inactiva' || s.estado === 'vencida') && (
                       <button
-                        className="btn btn-sm btn-success"
+                        className="btn btn-sm btn-success me-2"
                         onClick={() => abrirModalReactivar(s)}
                       >
                         Activar
                       </button>
-                    ) : (
-                      s.estado
                     )}
                   </td>
                 </tr>
@@ -318,7 +340,21 @@ export default function Suscripciones() {
               />
             </div>
             <div className="col-md-2">
-              <button className="btn btn-success w-100">Agregar Suscripción</button>
+              {(() => {
+                const tieneActiva = suscripcionesMascota.some(s => s.estado === 'activa');
+                return (
+                  <>
+                    <button className="btn btn-success w-100" disabled={tieneActiva}>
+                      Agregar Suscripción
+                    </button>
+                    {tieneActiva && (
+                      <div className="text-danger mt-2" style={{ fontSize: '0.95em' }}>
+                        La mascota ya tiene una suscripción activa.
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </form>
         )}
@@ -334,6 +370,7 @@ export default function Suscripciones() {
                   <th>Inicio</th>
                   <th>Fin</th>
                   <th>Estado</th>
+                  <th>Acción</th>
                 </tr>
               </thead>
               <tbody>
@@ -342,16 +379,15 @@ export default function Suscripciones() {
                     <td>{tipos.find(t => t.id === s.tipo_id)?.nombre || s.tipo_nombre || s.tipo_id}</td>
                     <td>{s.fecha_inicio?.slice(0,10)}</td>
                     <td>{s.fecha_fin?.slice(0,10)}</td>
+                    <td>{s.estado}</td>
                     <td>
-                      {(s.estado === 'inactiva' || s.estado === 'vencida') ? (
+                      {(s.estado === 'inactiva' || s.estado === 'vencida') && (
                         <button
-                          className="btn btn-sm btn-success"
+                          className="btn btn-sm btn-success me-2"
                           onClick={() => abrirModalReactivar(s)}
                         >
                           Activar
                         </button>
-                      ) : (
-                        s.estado
                       )}
                     </td>
                   </tr>

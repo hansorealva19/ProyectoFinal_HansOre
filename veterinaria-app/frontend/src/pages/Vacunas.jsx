@@ -143,6 +143,7 @@ export default function Vacunas() {
               className="form-control"
               onChange={handleChange}
               value={form.fecha_vencimiento}
+              required
             />
           </div>
           <div className="col-md-2">
@@ -150,6 +151,27 @@ export default function Vacunas() {
           </div>
         </form>
       )}
+
+      {/* Catálogo de vacunas solo informativo */}
+      <h4>Catálogo de Vacunas</h4>
+      <table className="table table-striped">
+        <thead>
+          <tr>
+            <th>Vacuna</th>
+            <th>Especie</th>
+            <th>Precio</th>
+          </tr>
+        </thead>
+        <tbody>
+          {catalogo.map(v => (
+            <tr key={v.id}>
+              <td>{v.nombre}</td>
+              <td>{v.especie_destino}</td>
+              <td>S/ {v.precio}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
       {/* Paso 4: Historial de vacunas aplicadas */}
       {selectedMascotaId && (

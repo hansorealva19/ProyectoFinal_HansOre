@@ -2,7 +2,8 @@ import { Outlet, Link, useNavigate } from 'react-router-dom';
 
 export default function Layout() {
   const navigate = useNavigate();
-
+  const user = JSON.parse(localStorage.getItem('user'));
+  const isVeterinario = user?.rol === 'veterinario';
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -21,6 +22,14 @@ export default function Layout() {
                 <li className="nav-item"><Link className="nav-link" to="/consultas">Consultas</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/vacunas">Vacunas</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/suscripciones">Suscripciones</Link></li>
+                {isVeterinario && (
+                  <li className="nav-item">
+                    <Link className="nav-link" to="/carrito">Carrito</Link>
+                  </li>
+                )}
+                <li className="nav-item">
+                  <Link className="nav-link" to="/perfil">Perfil</Link>
+                </li>
               </ul>
               <button onClick={handleLogout} className="btn btn-light">Logout</button>
             </div>

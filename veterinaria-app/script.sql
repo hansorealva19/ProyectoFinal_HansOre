@@ -38,7 +38,43 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`usuario` (
   UNIQUE INDEX `usuario` (`usuario` ASC) VISIBLE,
   UNIQUE INDEX `dni` (`dni` ASC) VISIBLE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 8
+AUTO_INCREMENT = 10
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `veterinaria_db`.`carrito`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `veterinaria_db`.`carrito` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `usuario_id` INT NOT NULL,
+  `estado` ENUM('activo', 'comprado', 'cancelado') NOT NULL DEFAULT 'activo',
+  `created_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  INDEX `usuario_id` (`usuario_id` ASC) VISIBLE,
+  CONSTRAINT `fk_carrito_usuario`
+    FOREIGN KEY (`usuario_id`)
+    REFERENCES `veterinaria_db`.`usuario` (`id`)
+    ON DELETE CASCADE)
+ENGINE = InnoDB
+AUTO_INCREMENT = 22
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `veterinaria_db`.`tipo_suscripcion`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `veterinaria_db`.`tipo_suscripcion` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `nombre` VARCHAR(50) NOT NULL,
+  `descripcion` TEXT NULL DEFAULT NULL,
+  `precio` DECIMAL(10,2) NOT NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 4
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -62,7 +98,97 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`mascota` (
     REFERENCES `veterinaria_db`.`usuario` (`id`)
     ON DELETE CASCADE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 5
+AUTO_INCREMENT = 7
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `veterinaria_db`.`suscripcion`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `veterinaria_db`.`suscripcion` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `mascota_id` INT NOT NULL,
+  `tipo_id` INT NOT NULL,
+  `fecha_inicio` DATETIME NOT NULL,
+  `fecha_fin` DATETIME NOT NULL,
+  `estado` ENUM('activa', 'inactiva', 'vencida') NOT NULL DEFAULT 'activa',
+  `created_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  INDEX `mascota_id` (`mascota_id` ASC) VISIBLE,
+  INDEX `fk_suscripcion_tipo` (`tipo_id` ASC) VISIBLE,
+  CONSTRAINT `fk_suscripcion_tipo`
+    FOREIGN KEY (`tipo_id`)
+    REFERENCES `veterinaria_db`.`tipo_suscripcion` (`id`)
+    ON DELETE RESTRICT,
+  CONSTRAINT `suscripcion_ibfk_1`
+    FOREIGN KEY (`mascota_id`)
+    REFERENCES `veterinaria_db`.`mascota` (`id`)
+    ON DELETE CASCADE)
+ENGINE = InnoDB
+AUTO_INCREMENT = 17
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `veterinaria_db`.`vacuna_catalogo`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `veterinaria_db`.`vacuna_catalogo` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `nombre` VARCHAR(100) NOT NULL,
+  `descripcion` TEXT NULL DEFAULT NULL,
+  `fabricante` VARCHAR(100) NULL DEFAULT NULL,
+  `precio` DECIMAL(10,2) NULL DEFAULT NULL,
+  `dosis` VARCHAR(50) NULL DEFAULT NULL,
+  `especie_destino` VARCHAR(50) NULL DEFAULT NULL,
+  `via_administracion` VARCHAR(50) NULL DEFAULT NULL,
+  `edad_minima` INT NULL DEFAULT NULL,
+  `periodicidad` VARCHAR(50) NULL DEFAULT NULL,
+  `lote` VARCHAR(50) NULL DEFAULT NULL,
+  `fecha_vencimiento` DATE NULL DEFAULT NULL,
+  `created_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 107
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `veterinaria_db`.`carrito_item`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `veterinaria_db`.`carrito_item` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `carrito_id` INT NOT NULL,
+  `tipo` ENUM('suscripcion', 'vacuna') NOT NULL,
+  `suscripcion_id` INT NULL DEFAULT NULL,
+  `vacuna_catalogo_id` INT NULL DEFAULT NULL,
+  `cantidad` INT NOT NULL DEFAULT '1',
+  `precio_unitario` DECIMAL(10,2) NOT NULL,
+  `total` DECIMAL(10,2) NOT NULL,
+  `mascota_id` INT NULL DEFAULT NULL,
+  `tipo_suscripcion_id` INT NULL DEFAULT NULL,
+  `fecha_vencimiento` DATE NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `carrito_id` (`carrito_id` ASC) VISIBLE,
+  INDEX `suscripcion_id` (`suscripcion_id` ASC) VISIBLE,
+  INDEX `vacuna_catalogo_id` (`vacuna_catalogo_id` ASC) VISIBLE,
+  CONSTRAINT `fk_carrito_item_carrito`
+    FOREIGN KEY (`carrito_id`)
+    REFERENCES `veterinaria_db`.`carrito` (`id`)
+    ON DELETE CASCADE,
+  CONSTRAINT `fk_carrito_item_suscripcion`
+    FOREIGN KEY (`suscripcion_id`)
+    REFERENCES `veterinaria_db`.`suscripcion` (`id`)
+    ON DELETE SET NULL,
+  CONSTRAINT `fk_carrito_item_vacuna_catalogo`
+    FOREIGN KEY (`vacuna_catalogo_id`)
+    REFERENCES `veterinaria_db`.`vacuna_catalogo` (`id`)
+    ON DELETE SET NULL)
+ENGINE = InnoDB
+AUTO_INCREMENT = 29
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -91,50 +217,35 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`consulta_veterinaria` (
     REFERENCES `veterinaria_db`.`usuario` (`id`)
     ON DELETE CASCADE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 12
+AUTO_INCREMENT = 13
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
 
 -- -----------------------------------------------------
--- Table `veterinaria_db`.`tipo_suscripcion`
+-- Table `veterinaria_db`.`pago`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `veterinaria_db`.`tipo_suscripcion` (
+CREATE TABLE IF NOT EXISTS `veterinaria_db`.`pago` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `nombre` VARCHAR(50) NOT NULL,
-  `descripcion` TEXT NULL DEFAULT NULL,
-  `precio` DECIMAL(10,2) NOT NULL,
-  PRIMARY KEY (`id`))
-ENGINE = InnoDB
-AUTO_INCREMENT = 4
-DEFAULT CHARACTER SET = utf8mb4
-COLLATE = utf8mb4_0900_ai_ci;
-
-
--- -----------------------------------------------------
--- Table `veterinaria_db`.`suscripcion`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `veterinaria_db`.`suscripcion` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `mascota_id` INT NOT NULL,
-  `tipo_id` INT NOT NULL,
-  `fecha_inicio` DATETIME NOT NULL,
-  `fecha_fin` DATETIME NOT NULL,
-  `estado` ENUM('activa', 'inactiva', 'vencida') NOT NULL DEFAULT 'activa',
-  `created_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+  `carrito_id` INT NOT NULL,
+  `usuario_id` INT NOT NULL,
+  `monto_total` DECIMAL(10,2) NOT NULL,
+  `fecha_pago` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `metodo` VARCHAR(50) NOT NULL,
+  `estado` ENUM('exitoso', 'fallido') NOT NULL DEFAULT 'exitoso',
   PRIMARY KEY (`id`),
-  INDEX `mascota_id` (`mascota_id` ASC) VISIBLE,
-  INDEX `fk_suscripcion_tipo` (`tipo_id` ASC) VISIBLE,
-  CONSTRAINT `fk_suscripcion_tipo`
-    FOREIGN KEY (`tipo_id`)
-    REFERENCES `veterinaria_db`.`tipo_suscripcion` (`id`)
-    ON DELETE RESTRICT,
-  CONSTRAINT `suscripcion_ibfk_1`
-    FOREIGN KEY (`mascota_id`)
-    REFERENCES `veterinaria_db`.`mascota` (`id`)
+  INDEX `carrito_id` (`carrito_id` ASC) VISIBLE,
+  INDEX `usuario_id` (`usuario_id` ASC) VISIBLE,
+  CONSTRAINT `fk_pago_carrito`
+    FOREIGN KEY (`carrito_id`)
+    REFERENCES `veterinaria_db`.`carrito` (`id`)
+    ON DELETE CASCADE,
+  CONSTRAINT `fk_pago_usuario`
+    FOREIGN KEY (`usuario_id`)
+    REFERENCES `veterinaria_db`.`usuario` (`id`)
     ON DELETE CASCADE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 3
+AUTO_INCREMENT = 19
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -157,31 +268,6 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`vacuna` (
     REFERENCES `veterinaria_db`.`mascota` (`id`)
     ON DELETE CASCADE)
 ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb4
-COLLATE = utf8mb4_0900_ai_ci;
-
-
--- -----------------------------------------------------
--- Table `veterinaria_db`.`vacuna_catalogo`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `veterinaria_db`.`vacuna_catalogo` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `nombre` VARCHAR(100) NOT NULL,
-  `descripcion` TEXT NULL DEFAULT NULL,
-  `fabricante` VARCHAR(100) NULL DEFAULT NULL,
-  `precio` DECIMAL(10,2) NULL DEFAULT NULL,
-  `dosis` VARCHAR(50) NULL DEFAULT NULL,
-  `especie_destino` VARCHAR(50) NULL DEFAULT NULL,
-  `via_administracion` VARCHAR(50) NULL DEFAULT NULL,
-  `edad_minima` INT NULL DEFAULT NULL,
-  `periodicidad` VARCHAR(50) NULL DEFAULT NULL,
-  `lote` VARCHAR(50) NULL DEFAULT NULL,
-  `fecha_vencimiento` DATE NULL DEFAULT NULL,
-  `created_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
-  `modified_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`))
-ENGINE = InnoDB
-AUTO_INCREMENT = 9
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -213,7 +299,7 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`vacuna_mascota` (
     REFERENCES `veterinaria_db`.`usuario` (`id`)
     ON DELETE CASCADE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 4
+AUTO_INCREMENT = 12
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 

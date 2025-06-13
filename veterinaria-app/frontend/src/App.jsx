@@ -7,6 +7,8 @@ import Consultas from './pages/Consultas';
 import Vacunas from './pages/Vacunas';
 import Suscripciones from './pages/Suscripciones';
 import HistoriaClinica from './pages/HistoriaClinica';
+import Carrito from './pages/Carrito';
+import Perfil from './pages/Perfil';
 
 import { useState } from 'react';
 
@@ -76,6 +78,25 @@ function App() {
             }
           />
 
+          <Route
+            path="carrito"
+            element={
+              <PrivateRoute>
+                {JSON.parse(localStorage.getItem('user'))?.rol === 'veterinario'
+                  ? <Carrito />
+                  : <Navigate to="/mascotas" replace />}
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="perfil"
+            element={
+              <PrivateRoute>
+                <Perfil />
+              </PrivateRoute>
+            }
+          />
           {/* Redirigir cualquier ruta desconocida al login */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Route>

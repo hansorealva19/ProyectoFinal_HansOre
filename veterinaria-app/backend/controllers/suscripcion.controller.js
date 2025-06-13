@@ -3,12 +3,21 @@ const pool = require('../db');
 exports.addSuscripcion = async (req, res) => {
   try {
     const { mascota_id, tipo_id, fecha_inicio, fecha_fin } = req.body;
+
+    // Cambia TODAS las suscripciones activas de la mascota a inactiva (sin importar tipo)
     await pool.query(
-      `INSERT INTO suscripcion (mascota_id, tipo_id, fecha_inicio, fecha_fin)
-       VALUES (?, ?, ?, ?)`,
+      `UPDATE suscripcion SET estado = 'inactiva'
+       WHERE mascota_id = ? AND estado = 'activa'`,
+      [mascota_id]
+    );
+
+    // Inserta la nueva suscripción como activa
+    await pool.query(
+      `INSERT INTO suscripcion (mascota_id, tipo_id, fecha_inicio, fecha_fin, estado)
+       VALUES (?, ?, ?, ?, 'activa')`,
       [mascota_id, tipo_id, fecha_inicio, fecha_fin]
     );
-    res.status(201).json({ message: 'Suscripción agregada' });
+    res.status(201).json({ message: 'Suscripción agregada y activada' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

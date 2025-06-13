@@ -17,6 +17,8 @@ app.use('/api/vacunas', require('./routes/vacuna.routes'));
 app.use('/api/suscripciones', require('./routes/suscripcion.routes'));
 app.use('/api/vacuna-mascota', require('./routes/vacuna_mascota.routes'));
 app.use('/api/tipo-suscripcion', require('./routes/tipo_suscripcion.routes'));
+app.use('/api/carrito', require('./routes/carrito.routes'));
+app.use('/api/perfil', require('./routes/perfil.routes'));
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Backend running on http://localhost:${PORT}`));
