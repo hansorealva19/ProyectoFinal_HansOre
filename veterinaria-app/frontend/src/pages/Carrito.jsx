@@ -103,13 +103,13 @@ export default function Carrito() {
     }
     try {
       await api.post('/carrito/agregar', {
-        dueno_dni: dniConfirmado,
-        tipo: 'vacuna',
-        vacuna_catalogo_id: vacunaId,
-        mascota_id: selectedMascotaId,
-        fecha_vencimiento: fechaVencimiento,
-        cantidad: 1
-      });
+      dueno_dni: dniConfirmado,
+      tipo: 'vacuna',
+      vacuna_catalogo_id: vacunaSeleccionada.id,
+      mascota_id: selectedMascotaId, // <-- ¡Esto es clave!
+      fecha_vencimiento: fechaVencimiento,
+      cantidad: 1
+    });
       setMensaje('Vacuna agregada al carrito');
       setShowVacunaModal(false);
       confirmarDni();
@@ -132,9 +132,9 @@ export default function Carrito() {
       await api.post('/carrito/agregar', {
         dueno_dni: dniConfirmado,
         tipo: 'suscripcion',
-        tipo_suscripcion_id: tipoSuscripcionId,
-        mascota_id: selectedMascotaId,
-        cantidad: anios
+        tipo_suscripcion_id: suscripcionSeleccionada.id,
+        mascota_id: selectedMascotaId, // <-- ¡Esto es clave!
+        cantidad: aniosSuscripcion
       });
       setMensaje('Suscripción agregada al carrito');
       setShowSuscripcionModal(false);
@@ -231,6 +231,7 @@ export default function Carrito() {
                       <tr>
                         <th>Tipo</th>
                         <th>Nombre</th>
+                        <th>Mascota</th>
                         <th>Cantidad</th>
                         <th>Precio Unitario</th>
                         <th>Total</th>
@@ -246,6 +247,7 @@ export default function Carrito() {
                               ? i.vacuna_nombre
                               : i.suscripcion_nombre || 'Suscripción'}
                           </td>
+                          <td>{i.mascota_nombre || '-'}</td>
                           <td>{i.cantidad}</td>
                           <td>S/ {i.precio_unitario}</td>
                           <td>S/ {i.total}</td>
@@ -259,7 +261,7 @@ export default function Carrito() {
                     </tbody>
                     <tfoot>
                       <tr>
-                        <td colSpan={4} className="text-end"><b>Total:</b></td>
+                        <td colSpan={5} className="text-end"><b>Total:</b></td>
                         <td colSpan={2}><b>S/ {total}</b></td>
                       </tr>
                     </tfoot>

@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 
+const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dqixr8zcs/image/upload';
+const CLOUDINARY_UPLOAD_PRESET = 'sin_firma'; // Ej: 'sin_firma'
+
 export default function Perfil() {
   const [perfil, setPerfil] = useState(null);
   const [form, setForm] = useState({
@@ -10,10 +13,12 @@ export default function Perfil() {
     correo: '',
     celular: '',
     dni: '',
-    password: ''
+    password: '',
+    foto_url: ''
   });
   const [mensaje, setMensaje] = useState('');
   const [editando, setEditando] = useState(false);
+  const [subiendo, setSubiendo] = useState(false);
 
   useEffect(() => {
     const fetchPerfil = async () => {
@@ -22,7 +27,7 @@ export default function Perfil() {
         setPerfil(res.data);
         setForm({ ...res.data, password: '' });
       } catch (e) {
-        setMensaje('Error al cargar perfil' + e.message);
+        setMensaje('Error al cargar perfil: ' + e.message);
       }
     };
     fetchPerfil();
@@ -30,10 +35,43 @@ export default function Perfil() {
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
+  // Subir imagen a imgbb
+  const handleFileChange = async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) {
+    setMensaje('La imagen es demasiado grande (máx 2 MB)');
+    return;
+  }
+  if (!file.type.startsWith('image/')) {
+    setMensaje('Solo se permiten archivos de imagen');
+    return;
+  }
+  setSubiendo(true);
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  try {
+    const res = await fetch(CLOUDINARY_URL, {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    if (data.secure_url) {
+      setForm(f => ({ ...f, foto_url: data.secure_url }));
+      setMensaje('Foto subida correctamente');
+    } else {
+      setMensaje('Error al subir imagen: ' + (data.error?.message || JSON.stringify(data)));
+    }
+  } catch {
+    setMensaje('Error al subir imagen');
+  }
+  setSubiendo(false);
+};
+
   const handleSubmit = async e => {
     e.preventDefault();
     try {
-      // Formatea la fecha antes de enviar
       const data = {
         ...form,
         fecha_nacimiento: form.fecha_nacimiento
@@ -60,6 +98,17 @@ export default function Perfil() {
       <h2 className="mb-4">Mi Perfil</h2>
       {mensaje && <div className="alert alert-info">{mensaje}</div>}
 
+      {/* Mostrar foto de perfil */}
+      {(form.foto_url || perfil.foto_url) && (
+        <div className="mb-3 text-center">
+          <img
+            src={form.foto_url || perfil.foto_url}
+            alt="Foto de perfil"
+            style={{ maxWidth: 120, borderRadius: '50%', border: '2px solid #ccc' }}
+          />
+        </div>
+      )}
+
       {!editando ? (
         <>
           <div className="mb-3"><b>Nombres:</b> {perfil.nombres}</div>
@@ -80,6 +129,24 @@ export default function Perfil() {
         </>
       ) : (
         <form onSubmit={handleSubmit}>
+          <div className="mb-3 text-center">
+            <label className="form-label">Foto de perfil</label>
+            <input
+              type="file"
+              accept="image/*"
+              className="form-control"
+              onChange={handleFileChange}
+              disabled={subiendo}
+            />
+            {subiendo && <div className="text-info mt-2">Subiendo imagen...</div>}
+            {form.foto_url && (
+              <img
+                src={form.foto_url}
+                alt="Previsualización"
+                style={{ maxWidth: 120, borderRadius: '50%', marginTop: 10, border: '2px solid #ccc' }}
+              />
+            )}
+          </div>
           <div className="mb-3">
             <label className="form-label">Nombres</label>
             <input

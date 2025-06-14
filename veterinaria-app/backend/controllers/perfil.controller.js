@@ -6,7 +6,7 @@ exports.getPerfil = async (req, res) => {
   try {
     const userId = req.user.id;
     const [rows] = await pool.query(
-      `SELECT id, nombres, apellidos, fecha_nacimiento, correo, celular, dni, usuario, rol
+      `SELECT id, nombres, apellidos, fecha_nacimiento, correo, celular, dni, usuario, rol, foto_url
        FROM usuario WHERE id = ?`, [userId]
     );
     if (rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -20,7 +20,7 @@ exports.getPerfil = async (req, res) => {
 exports.updatePerfil = async (req, res) => {
   try {
     const userId = req.user.id;
-    let { nombres, apellidos, fecha_nacimiento, correo, celular, dni, password } = req.body;
+    let { nombres, apellidos, fecha_nacimiento, correo, celular, dni, password, foto_url } = req.body;
 
     // Validar campos requeridos
     if (!nombres || !apellidos || !correo || !dni) {
@@ -31,23 +31,26 @@ exports.updatePerfil = async (req, res) => {
     if (!fecha_nacimiento) {
       return res.status(400).json({ error: 'La fecha de nacimiento es obligatoria' });
     }
-    // Si viene en formato ISO, recorta a YYYY-MM-DD
     if (fecha_nacimiento.length > 10) {
       fecha_nacimiento = fecha_nacimiento.slice(0, 10);
     }
-    // Validar formato final
     if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha_nacimiento)) {
       return res.status(400).json({ error: 'Formato de fecha de nacimiento inválido' });
     }
 
-    // Si se envía password, hashearla
+    // Si no se envía foto_url, mantenemos la anterior
+    if (typeof foto_url === 'undefined') {
+      const [rows] = await pool.query('SELECT foto_url FROM usuario WHERE id = ?', [userId]);
+      foto_url = rows.length > 0 ? rows[0].foto_url : null;
+    }
+
     let updateQuery = `
-      UPDATE usuario SET nombres = ?, apellidos = ?, fecha_nacimiento = ?, correo = ?, celular = ?, dni = ?
+      UPDATE usuario SET nombres = ?, apellidos = ?, fecha_nacimiento = ?, correo = ?, celular = ?, dni = ?, foto_url = ?
     `;
-    const params = [nombres, apellidos, fecha_nacimiento, correo, celular, dni];
+    const params = [nombres, apellidos, fecha_nacimiento, correo, celular, dni, foto_url];
 
     if (password && password.trim() !== '') {
-      const hash = await require('bcryptjs').hash(password, 10);
+      const hash = await bcrypt.hash(password, 10);
       updateQuery += `, password = ?`;
       params.push(hash);
     }

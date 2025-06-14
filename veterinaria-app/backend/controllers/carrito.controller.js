@@ -3,7 +3,6 @@ const pool = require('../db');
 // Obtener el carrito activo del usuario (o crear uno si no existe)
 exports.getCarritoActual = async (req, res) => {
   try {
-    // NUEVO: Permitir buscar por DNI de dueño
     const dueno_dni = req.query.dueno_dni || req.body.dueno_dni;
     let usuario_id = req.user.id;
 
@@ -26,11 +25,14 @@ exports.getCarritoActual = async (req, res) => {
     carrito = carritos[0];
     // Traer ítems
     const [items] = await pool.query(
-      `SELECT ci.*, vc.nombre AS vacuna_nombre, s.id AS suscripcion_id, ts.nombre AS suscripcion_nombre
+      `SELECT ci.*, 
+              vc.nombre AS vacuna_nombre, 
+              ts.nombre AS suscripcion_nombre,
+              m.nombre AS mascota_nombre
        FROM carrito_item ci
        LEFT JOIN vacuna_catalogo vc ON ci.vacuna_catalogo_id = vc.id
-       LEFT JOIN suscripcion s ON ci.suscripcion_id = s.id
-       LEFT JOIN tipo_suscripcion ts ON s.tipo_id = ts.id
+       LEFT JOIN tipo_suscripcion ts ON ci.tipo_suscripcion_id = ts.id
+       LEFT JOIN mascota m ON ci.mascota_id = m.id
        WHERE ci.carrito_id = ?`, [carrito.id]
     );
     res.json({ carrito, items });
@@ -91,7 +93,7 @@ exports.agregarItem = async (req, res) => {
         cant,
         precio_unitario,
         total,
-        mascota_id || null,
+        mascota_id || null, // <-- Aquí debe llegar el ID correcto
         fecha_vencimiento || null,
         tipo_suscripcion_id || null
       ]
