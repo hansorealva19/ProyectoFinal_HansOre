@@ -27,18 +27,19 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`usuario` (
   `fecha_nacimiento` DATE NOT NULL,
   `correo` VARCHAR(100) NOT NULL,
   `celular` VARCHAR(20) NULL DEFAULT NULL,
-  `dni` VARCHAR(20) NULL DEFAULT NULL,
+  `dni` VARCHAR(20) NOT NULL,
   `usuario` VARCHAR(50) NOT NULL,
   `password` VARCHAR(255) NOT NULL,
   `rol` ENUM('dueño', 'veterinario') NOT NULL,
   `created_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
   `modified_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `foto_url` VARCHAR(255) NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `correo` (`correo` ASC) VISIBLE,
   UNIQUE INDEX `usuario` (`usuario` ASC) VISIBLE,
   UNIQUE INDEX `dni` (`dni` ASC) VISIBLE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 10
+AUTO_INCREMENT = 14
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -59,7 +60,7 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`carrito` (
     REFERENCES `veterinaria_db`.`usuario` (`id`)
     ON DELETE CASCADE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 22
+AUTO_INCREMENT = 26
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -91,6 +92,7 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`mascota` (
   `duenio_id` INT NOT NULL,
   `created_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
   `modified_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `foto_url` VARCHAR(255) NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   INDEX `duenio_id` (`duenio_id` ASC) VISIBLE,
   CONSTRAINT `mascota_ibfk_1`
@@ -126,7 +128,7 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`suscripcion` (
     REFERENCES `veterinaria_db`.`mascota` (`id`)
     ON DELETE CASCADE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 17
+AUTO_INCREMENT = 19
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -188,7 +190,7 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`carrito_item` (
     REFERENCES `veterinaria_db`.`vacuna_catalogo` (`id`)
     ON DELETE SET NULL)
 ENGINE = InnoDB
-AUTO_INCREMENT = 29
+AUTO_INCREMENT = 50
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -245,7 +247,7 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`pago` (
     REFERENCES `veterinaria_db`.`usuario` (`id`)
     ON DELETE CASCADE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 19
+AUTO_INCREMENT = 23
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -299,7 +301,7 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`vacuna_mascota` (
     REFERENCES `veterinaria_db`.`usuario` (`id`)
     ON DELETE CASCADE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 12
+AUTO_INCREMENT = 22
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
