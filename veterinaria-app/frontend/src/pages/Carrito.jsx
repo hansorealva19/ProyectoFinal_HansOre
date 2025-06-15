@@ -26,9 +26,22 @@ export default function Carrito() {
 
   const { setCarritoCount } = useCarrito();
 
-  // Cada vez que cambian los items, actualiza el contador:
+  // Al montar, si hay un DNI guardado, cargar automáticamente los datos
   useEffect(() => {
-    // Nuevo cálculo: vacunas suman cantidad, suscripciones suman 1 por ítem
+    const dniGuardado = localStorage.getItem('carritoDni');
+    if (dniGuardado) {
+      setDni(dniGuardado);
+      setDniConfirmado(dniGuardado);
+      setTimeout(() => {
+        confirmarDni(dniGuardado);
+      }, 0);
+    }
+    // eslint-disable-next-line
+  }, []);
+
+  // Cada vez que cambian los items, actualiza el contador y el resumen para el popover
+  useEffect(() => {
+    // Vacunas suman cantidad, suscripciones suman 1 por ítem
     const count = items.reduce((sum, i) => {
       if (i.tipo === 'vacuna') {
         return sum + Number(i.cantidad);
@@ -38,21 +51,25 @@ export default function Carrito() {
       return sum;
     }, 0);
     setCarritoCount(count);
+    // Guarda el resumen en localStorage para el popover
+    localStorage.setItem('carritoResumen', JSON.stringify(items));
   }, [items, setCarritoCount]);
 
   // Confirmar el DNI y cargar el carrito, mascotas y catálogos
-  const confirmarDni = async () => {
+  const confirmarDni = async (dniParam) => {
     setLoading(true);
     setMensaje('');
+    const dniToUse = dniParam || dni;
     try {
       // Cargar carrito
-      const res = await api.get(`/carrito/mi-carrito?dueno_dni=${dni}`);
+      const res = await api.get(`/carrito/mi-carrito?dueno_dni=${dniToUse}`);
       setItems(res.data.items);
-      setDniConfirmado(dni);
+      setDniConfirmado(dniToUse);
+      localStorage.setItem('carritoDni', dniToUse);
 
       // Cargar mascotas del dueño
       const resMascotas = await api.get('/mascotas');
-      const mascotasDueño = resMascotas.data.filter(m => m.dni === dni);
+      const mascotasDueño = resMascotas.data.filter(m => m.dni === dniToUse);
       setMascotas(mascotasDueño);
       setSelectedMascotaId(null);
 
@@ -86,14 +103,14 @@ export default function Carrito() {
   const vaciarCarrito = async () => {
     if (!window.confirm('¿Vaciar todo el carrito?')) return;
     await api.delete('/carrito/vaciar', { data: { dueno_dni: dniConfirmado } });
-    confirmarDni();
+    confirmarDni(dniConfirmado);
   };
 
   // Eliminar ítem
   const eliminarItem = async (id) => {
     if (!window.confirm('¿Eliminar este ítem del carrito?')) return;
     await api.delete(`/carrito/item/${id}`, { data: { dueno_dni: dniConfirmado } });
-    confirmarDni();
+    confirmarDni(dniConfirmado);
   };
 
   // Simular pago
@@ -102,7 +119,7 @@ export default function Carrito() {
     try {
       const res = await api.post('/carrito/pagar', { dueno_dni: dniConfirmado, metodo: 'simulado' });
       setMensaje('Pago exitoso. Monto: S/ ' + res.data.monto_total);
-      confirmarDni();
+      confirmarDni(dniConfirmado);
     } catch (e) {
       setMensaje('Error al pagar: ' + (e.response?.data?.error || e.message));
     }
@@ -120,16 +137,16 @@ export default function Carrito() {
     }
     try {
       await api.post('/carrito/agregar', {
-      dueno_dni: dniConfirmado,
-      tipo: 'vacuna',
-      vacuna_catalogo_id: vacunaSeleccionada.id,
-      mascota_id: selectedMascotaId, // <-- ¡Esto es clave!
-      fecha_vencimiento: fechaVencimiento,
-      cantidad: 1
-    });
+        dueno_dni: dniConfirmado,
+        tipo: 'vacuna',
+        vacuna_catalogo_id: vacunaSeleccionada.id,
+        mascota_id: selectedMascotaId,
+        fecha_vencimiento: fechaVencimiento,
+        cantidad: 1
+      });
       setMensaje('Vacuna agregada al carrito');
       setShowVacunaModal(false);
-      confirmarDni();
+      confirmarDni(dniConfirmado);
     } catch (e) {
       setMensaje('Error al agregar vacuna: ' + (e.response?.data?.error || e.message));
     }
@@ -150,12 +167,12 @@ export default function Carrito() {
         dueno_dni: dniConfirmado,
         tipo: 'suscripcion',
         tipo_suscripcion_id: suscripcionSeleccionada.id,
-        mascota_id: selectedMascotaId, // <-- ¡Esto es clave!
+        mascota_id: selectedMascotaId,
         cantidad: aniosSuscripcion
       });
       setMensaje('Suscripción agregada al carrito');
       setShowSuscripcionModal(false);
-      confirmarDni();
+      confirmarDni(dniConfirmado);
     } catch (e) {
       setMensaje('Error al agregar suscripción: ' + (e.response?.data?.error || e.message));
     }
@@ -180,7 +197,7 @@ export default function Carrito() {
         />
         <button
           className="btn btn-primary"
-          onClick={confirmarDni}
+          onClick={() => confirmarDni()}
           disabled={!dni || !!dniConfirmado}
         >
           Confirmar DNI
@@ -197,6 +214,9 @@ export default function Carrito() {
               setMascotas([]);
               setSelectedMascotaId(null);
               setMensaje('');
+              localStorage.removeItem('carritoDni');
+              localStorage.removeItem('carritoResumen');
+              setCarritoCount(0);
             }}
           >
             Cambiar DNI
