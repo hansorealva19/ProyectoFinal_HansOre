@@ -232,7 +232,7 @@ export default function Suscripciones() {
                 <th>Inicio</th>
                 <th>Fin</th>
                 <th>Estado</th>
-                <th>Acción</th>
+                
               </tr>
             </thead>
             <tbody>
@@ -246,16 +246,7 @@ export default function Suscripciones() {
                   <td>{s.fecha_inicio?.slice(0,10)}</td>
                   <td>{s.fecha_fin?.slice(0,10)}</td>
                   <td>{s.estado}</td>
-                  <td>
-                    {(s.estado === 'inactiva' || s.estado === 'vencida') && (
-                      <button
-                        className="btn btn-sm btn-success me-2"
-                        onClick={() => abrirModalReactivar(s)}
-                      >
-                        Activar
-                      </button>
-                    )}
-                  </td>
+                  
                 </tr>
               ))}
             </tbody>
