@@ -2,12 +2,18 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 
+const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dqixr8zcs/image/upload';
+const CLOUDINARY_UPLOAD_PRESET = 'sin_firma';
+
+
 export default function HistoriaClinica() {
   const { id } = useParams();
   const [mascota, setMascota] = useState(null);
   const [consultas, setConsultas] = useState([]);
   const [vacunas, setVacunas] = useState([]);
   const [suscripciones, setSuscripciones] = useState([]);
+  const [subiendo, setSubiendo] = useState(false);
+  const [mensaje, setMensaje] = useState('');
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -34,12 +40,96 @@ export default function HistoriaClinica() {
     fetchAll();
   }, [id]);
 
+  // Subir imagen a Cloudinary
+  const handleFileChange = async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setMensaje('La imagen es demasiado grande (máx 2 MB)');
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      setMensaje('Solo se permiten archivos de imagen');
+      return;
+    }
+    setSubiendo(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    try {
+      const res = await fetch(CLOUDINARY_URL, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.secure_url) {
+        // Actualiza la foto en el backend
+        await api.put(`/mascotas/${id}/foto`, { foto_url: data.secure_url });
+        setMascota(m => ({ ...m, foto_url: data.secure_url }));
+        setMensaje('Foto de mascota actualizada');
+      } else {
+        setMensaje('Error al subir imagen: ' + (data.error?.message || JSON.stringify(data)));
+      }
+    } catch {
+      setMensaje('Error al subir imagen');
+    }
+    setSubiendo(false);
+  };
+
+
   if (!mascota) return <div className="container mt-4">Cargando...</div>;
 
   return (
     <div className="container mt-4">
       <Link to="/mascotas" className="btn btn-link mb-3">&larr; Volver a Mascotas</Link>
       <h2 className="mb-4">Historia Clínica de {mascota.nombre}</h2>
+      {mensaje && <div className="alert alert-info">{mensaje}</div>}
+
+      {/* Foto de perfil de la mascota */}
+      <div className="mb-4 text-center">
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <img
+            src={mascota.foto_url || 'https://cdn-icons-png.flaticon.com/512/616/616408.png'}
+            alt="Foto de mascota"
+            style={{ width: 140, height: 140, objectFit: 'cover', borderRadius: '50%', border: '3px solid #ccc' }}
+          />
+          <label
+            htmlFor="foto-mascota"
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              right: 0,
+              background: '#007bff',
+              color: '#fff',
+              borderRadius: '50%',
+              width: 36,
+              height: 36,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              border: '2px solid #fff',
+              fontSize: 20,
+              boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+            }}
+            title="Cambiar foto"
+          >
+            <span role="img" aria-label="cámara">📷</span>
+            <input
+              id="foto-mascota"
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleFileChange}
+              disabled={subiendo}
+            />
+          </label>
+        </div>
+        <div className="mt-2 text-muted" style={{ fontSize: 13 }}>
+          {subiendo ? 'Subiendo imagen...' : 'Haz clic en el ícono para subir/cambiar foto'}
+        </div>
+      </div>
+
       <div className="card mb-4">
         <div className="card-body">
           <h5 className="card-title">Datos de la Mascota</h5>

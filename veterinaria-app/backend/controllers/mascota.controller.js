@@ -81,3 +81,19 @@ exports.getMascotaById = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// Actualizar foto de perfil de la mascota
+exports.actualizarFoto = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { foto_url } = req.body;
+    if (!foto_url) return res.status(400).json({ error: 'Debe enviar la URL de la foto' });
+
+    // Opcional: validar que el usuario tenga permiso sobre la mascota
+
+    await pool.query('UPDATE mascota SET foto_url = ? WHERE id = ?', [foto_url, id]);
+    res.json({ message: 'Foto de mascota actualizada' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
