@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../services/api';
+import { useCarrito } from '../context/CarritoContext';
 
 export default function Carrito() {
   const [dni, setDni] = useState('');
@@ -22,6 +23,22 @@ export default function Carrito() {
   const [showSuscripcionModal, setShowSuscripcionModal] = useState(false);
   const [suscripcionSeleccionada, setSuscripcionSeleccionada] = useState(null);
   const [aniosSuscripcion, setAniosSuscripcion] = useState(1);
+
+  const { setCarritoCount } = useCarrito();
+
+  // Cada vez que cambian los items, actualiza el contador:
+  useEffect(() => {
+    // Nuevo cálculo: vacunas suman cantidad, suscripciones suman 1 por ítem
+    const count = items.reduce((sum, i) => {
+      if (i.tipo === 'vacuna') {
+        return sum + Number(i.cantidad);
+      } else if (i.tipo === 'suscripcion') {
+        return sum + 1;
+      }
+      return sum;
+    }, 0);
+    setCarritoCount(count);
+  }, [items, setCarritoCount]);
 
   // Confirmar el DNI y cargar el carrito, mascotas y catálogos
   const confirmarDni = async () => {
