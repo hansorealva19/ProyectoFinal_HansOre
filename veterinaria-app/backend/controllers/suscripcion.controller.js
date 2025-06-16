@@ -26,3 +26,32 @@ exports.getAllSuscripciones = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.getSuscripcionById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [rows] = await pool.query(
+      `SELECT s.*, 
+              m.nombre AS nombre_mascota, 
+              u.nombres AS nombre_dueno, 
+              u.dni AS dni_dueno,
+              t.nombre AS tipo_nombre, 
+              t.precio
+       FROM suscripcion s
+       JOIN mascota m ON s.mascota_id = m.id
+       JOIN usuario u ON m.duenio_id = u.id
+       JOIN tipo_suscripcion t ON s.tipo_id = t.id
+       WHERE s.id = ?`,
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Suscripción no encontrada' });
+    }
+
+    res.json(rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

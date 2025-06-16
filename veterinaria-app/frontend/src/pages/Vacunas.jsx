@@ -3,8 +3,15 @@ import api from '../services/api';
 
 export default function Vacunas() {
   const [catalogo, setCatalogo] = useState([]);
-  const [form, setForm] = useState({ nombre: '', especie_destino: '', precio: '', fabricante: '', descripcion: '' });
-  const [mostrarFormulario, setMostrarFormulario] = useState(false); // Estado para controlar la visibilidad del formulario
+  const [form, setForm] = useState({
+    nombre: '',
+    especie_destino: '',
+    precio: '',
+    fabricante: '',
+    descripcion: '',
+    stock: 0
+  });
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
   // Cargar catálogo de vacunas
   useEffect(() => {
@@ -19,15 +26,23 @@ export default function Vacunas() {
     fetchCatalogo();
   }, []);
 
-  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = e =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleAdd = async e => {
     e.preventDefault();
     try {
       await api.post('/vacunas/catalogo', form);
       alert('Vacuna registrada correctamente');
-      setForm({ nombre: '', especie_destino: '', precio: '', fabricante: '', descripcion: '' });
-      setMostrarFormulario(false); // Ocultar el formulario después de registrar
+      setForm({
+        nombre: '',
+        especie_destino: '',
+        precio: '',
+        fabricante: '',
+        descripcion: '',
+        stock: 0
+      });
+      setMostrarFormulario(false);
       const res = await api.get('/vacunas/catalogo');
       setCatalogo(res.data);
     } catch {
@@ -35,11 +50,21 @@ export default function Vacunas() {
     }
   };
 
+  const handleAumentarStock = async (id, cantidad) => {
+    try {
+      await api.put(`/vacunas/catalogo/${id}/stock`, { cantidad });
+      alert('Stock actualizado correctamente');
+      const res = await api.get('/vacunas/catalogo');
+      setCatalogo(res.data);
+    } catch {
+      alert('Error al actualizar stock');
+    }
+  };
+
   return (
     <div className="container">
       <h3 className="mb-4">Catálogo de Vacunas</h3>
 
-      {/* Botón para mostrar/ocultar el formulario */}
       <button
         className={`btn ${mostrarFormulario ? 'btn-secondary' : 'btn-primary'} mb-4`}
         onClick={() => setMostrarFormulario(!mostrarFormulario)}
@@ -47,14 +72,12 @@ export default function Vacunas() {
         {mostrarFormulario ? 'Cancelar' : 'Agregar Nueva Vacuna'}
       </button>
 
-      {/* Formulario para registrar nueva vacuna */}
       {mostrarFormulario && (
         <form onSubmit={handleAdd} className="row g-3 mb-4">
           <div className="col-md-4">
             <label className="form-label">Nombre</label>
             <input
               name="nombre"
-              placeholder="Nombre de la vacuna"
               className="form-control"
               onChange={handleChange}
               value={form.nombre}
@@ -65,7 +88,6 @@ export default function Vacunas() {
             <label className="form-label">Especie Destino</label>
             <input
               name="especie_destino"
-              placeholder="Ej: Canina, Felina"
               className="form-control"
               onChange={handleChange}
               value={form.especie_destino}
@@ -77,32 +99,21 @@ export default function Vacunas() {
             <input
               type="number"
               name="precio"
-              placeholder="Precio en S/"
               className="form-control"
               onChange={handleChange}
               value={form.precio}
               required
             />
           </div>
-          <div className="col-md-6">
-            <label className="form-label">Fabricante</label>
+          <div className="col-md-4">
+            <label className="form-label">Stock</label>
             <input
-              name="fabricante"
-              placeholder="Fabricante de la vacuna"
+              type="number"
+              name="stock"
               className="form-control"
               onChange={handleChange}
-              value={form.fabricante}
-            />
-          </div>
-          <div className="col-md-6">
-            <label className="form-label">Descripción</label>
-            <textarea
-              name="descripcion"
-              placeholder="Descripción de la vacuna"
-              className="form-control"
-              rows={3}
-              onChange={handleChange}
-              value={form.descripcion}
+              value={form.stock}
+              required
             />
           </div>
           <div className="col-12">
@@ -111,15 +122,14 @@ export default function Vacunas() {
         </form>
       )}
 
-      {/* Catálogo de vacunas */}
       <table className="table table-striped">
         <thead>
           <tr>
             <th>Vacuna</th>
             <th>Especie</th>
             <th>Precio</th>
-            <th>Fabricante</th>
-            <th>Descripción</th>
+            <th>Stock</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -128,8 +138,21 @@ export default function Vacunas() {
               <td>{v.nombre}</td>
               <td>{v.especie_destino}</td>
               <td>S/ {v.precio}</td>
-              <td>{v.fabricante}</td>
-              <td>{v.descripcion}</td>
+              <td>{v.stock}</td>
+              <td>
+                <button
+                  className="btn btn-sm btn-outline-primary"
+                  onClick={() => {
+                    const cantidad = prompt(
+                      'Ingrese la cantidad a agregar al stock:'
+                    );
+                    if (cantidad && !isNaN(cantidad))
+                      handleAumentarStock(v.id, parseInt(cantidad, 10));
+                  }}
+                >
+                  Aumentar Stock
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>

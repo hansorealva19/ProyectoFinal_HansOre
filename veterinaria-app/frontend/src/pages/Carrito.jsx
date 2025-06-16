@@ -11,11 +11,9 @@ export default function Carrito() {
   const [mensaje, setMensaje] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Catálogos
   const [vacunas, setVacunas] = useState([]);
   const [suscripciones, setSuscripciones] = useState([]);
 
-  // Modales y datos temporales
   const [showVacunaModal, setShowVacunaModal] = useState(false);
   const [vacunaSeleccionada, setVacunaSeleccionada] = useState(null);
   const [fechaVencimiento, setFechaVencimiento] = useState('');
@@ -26,58 +24,41 @@ export default function Carrito() {
 
   const { setCarritoCount } = useCarrito();
 
-  // Al montar, si hay un DNI guardado, cargar automáticamente los datos
   useEffect(() => {
     const dniGuardado = localStorage.getItem('carritoDni');
     if (dniGuardado) {
       setDni(dniGuardado);
       setDniConfirmado(dniGuardado);
-      setTimeout(() => {
-        confirmarDni(dniGuardado);
-      }, 0);
+      confirmarDni(dniGuardado);
     }
     // eslint-disable-next-line
   }, []);
 
-  // Cada vez que cambian los items, actualiza el contador y el resumen para el popover
   useEffect(() => {
-    // Vacunas suman cantidad, suscripciones suman 1 por ítem
     const count = items.reduce((sum, i) => {
-      if (i.tipo === 'vacuna') {
-        return sum + Number(i.cantidad);
-      } else if (i.tipo === 'suscripcion') {
-        return sum + 1;
-      }
-      return sum;
+      return sum + (i.tipo === 'vacuna' ? Number(i.cantidad) : 1);
     }, 0);
     setCarritoCount(count);
-    // Guarda el resumen en localStorage para el popover
     localStorage.setItem('carritoResumen', JSON.stringify(items));
   }, [items, setCarritoCount]);
 
-  // Confirmar el DNI y cargar el carrito, mascotas y catálogos
   const confirmarDni = async (dniParam) => {
     setLoading(true);
     setMensaje('');
     const dniToUse = dniParam || dni;
     try {
-      // Cargar carrito
       const res = await api.get(`/carrito/mi-carrito?dueno_dni=${dniToUse}`);
       setItems(res.data.items);
       setDniConfirmado(dniToUse);
       localStorage.setItem('carritoDni', dniToUse);
 
-      // Cargar mascotas del dueño
       const resMascotas = await api.get('/mascotas');
-      const mascotasDueño = resMascotas.data.filter(m => m.dni === dniToUse);
-      setMascotas(mascotasDueño);
+      setMascotas(resMascotas.data.filter(m => m.dni === dniToUse));
       setSelectedMascotaId(null);
 
-      // Cargar catálogo de vacunas
       const resVacunas = await api.get('/vacuna-mascota/catalogo');
       setVacunas(resVacunas.data);
 
-      // Cargar catálogo de suscripciones (solo tipos, no las activas)
       const resSuscripciones = await api.get('/tipo-suscripcion');
       setSuscripciones(resSuscripciones.data);
 
@@ -91,29 +72,23 @@ export default function Carrito() {
       setSuscripciones([]);
       setMascotas([]);
       setSelectedMascotaId(null);
-      setMensaje(
-        e.response?.data?.error ||
-          'No se pudo cargar el carrito. Verifique el DNI del dueño.'
-      );
+      setMensaje(e.response?.data?.error || 'No se pudo cargar el carrito.');
     }
     setLoading(false);
   };
 
-  // Vaciar carrito
   const vaciarCarrito = async () => {
     if (!window.confirm('¿Vaciar todo el carrito?')) return;
     await api.delete('/carrito/vaciar', { data: { dueno_dni: dniConfirmado } });
     confirmarDni(dniConfirmado);
   };
 
-  // Eliminar ítem
   const eliminarItem = async (id) => {
     if (!window.confirm('¿Eliminar este ítem del carrito?')) return;
     await api.delete(`/carrito/item/${id}`, { data: { dueno_dni: dniConfirmado } });
     confirmarDni(dniConfirmado);
   };
 
-  // Simular pago
   const pagar = async () => {
     if (!window.confirm('¿Confirmar pago?')) return;
     try {
@@ -125,13 +100,12 @@ export default function Carrito() {
     }
   };
 
-  // Agregar vacuna al carrito (desde modal)
-  const agregarVacuna = async (vacunaId, fechaVencimiento) => {
+  const agregarVacuna = async (vacunaId, fechaVenc) => {
     if (!selectedMascotaId) {
       setMensaje('Debe seleccionar una mascota antes de agregar una vacuna.');
       return;
     }
-    if (!fechaVencimiento) {
+    if (!fechaVenc) {
       setMensaje('Debe ingresar la fecha de vencimiento de la vacuna.');
       return;
     }
@@ -139,26 +113,26 @@ export default function Carrito() {
       await api.post('/carrito/agregar', {
         dueno_dni: dniConfirmado,
         tipo: 'vacuna',
-        vacuna_catalogo_id: vacunaSeleccionada.id,
+        vacuna_catalogo_id: vacunaId,
         mascota_id: selectedMascotaId,
-        fecha_vencimiento: fechaVencimiento,
+        fecha_vencimiento: fechaVenc,
         cantidad: 1
       });
-      setMensaje('Vacuna agregada al carrito');
+      setMensaje('Vacuna añadida al carrito correctamente');
       setShowVacunaModal(false);
+      setFechaVencimiento('');
       confirmarDni(dniConfirmado);
     } catch (e) {
       setMensaje('Error al agregar vacuna: ' + (e.response?.data?.error || e.message));
     }
   };
 
-  // Agregar suscripción al carrito (desde modal)
-  const agregarSuscripcion = async (tipoSuscripcionId, anios) => {
+  const agregarSuscripcion = async (tipoId, años) => {
     if (!selectedMascotaId) {
       setMensaje('Debe seleccionar una mascota antes de agregar una suscripción.');
       return;
     }
-    if (!anios || isNaN(anios) || anios < 1) {
+    if (!años || isNaN(años) || años < 1) {
       setMensaje('Debe ingresar la cantidad de años.');
       return;
     }
@@ -166,25 +140,25 @@ export default function Carrito() {
       await api.post('/carrito/agregar', {
         dueno_dni: dniConfirmado,
         tipo: 'suscripcion',
-        tipo_suscripcion_id: suscripcionSeleccionada.id,
+        tipo_suscripcion_id: tipoId,
         mascota_id: selectedMascotaId,
-        cantidad: aniosSuscripcion
+        cantidad: años
       });
       setMensaje('Suscripción agregada al carrito');
       setShowSuscripcionModal(false);
+      setAniosSuscripcion(1);
       confirmarDni(dniConfirmado);
     } catch (e) {
       setMensaje('Error al agregar suscripción: ' + (e.response?.data?.error || e.message));
     }
   };
 
-  // Total
   const total = items.reduce((sum, i) => sum + Number(i.total), 0);
 
   return (
     <div className="container">
       <h2 className="mb-4">Carrito de Compras (Veterinario)</h2>
-      {/* Paso 1: Ingresar y confirmar DNI */}
+
       <div className="mb-3 d-flex align-items-center">
         <input
           type="text"
@@ -223,23 +197,17 @@ export default function Carrito() {
           </button>
         )}
       </div>
-      {dniConfirmado && (
-        <div className="mb-2">
-          <span className="badge bg-success">DNI confirmado: {dniConfirmado}</span>
-        </div>
-      )}
+
+      {dniConfirmado && <div className="mb-2"><span className="badge bg-success">DNI confirmado: {dniConfirmado}</span></div>}
       {mensaje && <div className="alert alert-info">{mensaje}</div>}
       {loading ? (
         <div>Cargando...</div>
       ) : (
         <>
-          {/* Paso 2: Seleccionar mascota */}
           {dniConfirmado && (
             <div className="mb-3">
               <h5>Seleccione una mascota del dueño:</h5>
-              {mascotas.length === 0 && (
-                <div className="alert alert-warning">Este dueño no tiene mascotas registradas.</div>
-              )}
+              {mascotas.length === 0 && <div className="alert alert-warning">Este dueño no tiene mascotas registradas.</div>}
               <ul className="list-group">
                 {mascotas.map(m => (
                   <li
@@ -255,11 +223,10 @@ export default function Carrito() {
             </div>
           )}
 
-          {/* Paso 3: Mostrar carrito */}
           {dniConfirmado && (
             <>
               <h4 className="mt-4">Carrito Actual</h4>
-              {(!items || items.length === 0) ? (
+              {items.length === 0 ? (
                 <div className="alert alert-warning">El carrito está vacío.</div>
               ) : (
                 <>
@@ -279,19 +246,13 @@ export default function Carrito() {
                       {items.map(i => (
                         <tr key={i.id}>
                           <td>{i.tipo}</td>
-                          <td>
-                            {i.tipo === 'vacuna'
-                              ? i.vacuna_nombre
-                              : i.suscripcion_nombre || 'Suscripción'}
-                          </td>
+                          <td>{i.tipo === 'vacuna' ? i.vacuna_nombre : i.suscripcion_nombre}</td>
                           <td>{i.mascota_nombre || '-'}</td>
                           <td>{i.cantidad}</td>
                           <td>S/ {i.precio_unitario}</td>
                           <td>S/ {i.total}</td>
                           <td>
-                            <button className="btn btn-danger btn-sm" onClick={() => eliminarItem(i.id)}>
-                              Quitar
-                            </button>
+                            <button className="btn btn-danger btn-sm" onClick={() => eliminarItem(i.id)}>Quitar</button>
                           </td>
                         </tr>
                       ))}
@@ -310,7 +271,6 @@ export default function Carrito() {
                 </>
               )}
 
-              {/* Paso 4: Agregar productos */}
               <div className="row">
                 <div className="col-md-6">
                   <h5>Vacunas disponibles</h5>
@@ -320,6 +280,7 @@ export default function Carrito() {
                         <th>Vacuna</th>
                         <th>Especie</th>
                         <th>Precio</th>
+                        <th>Stock</th>
                         <th></th>
                       </tr>
                     </thead>
@@ -329,10 +290,11 @@ export default function Carrito() {
                           <td>{v.nombre}</td>
                           <td>{v.especie_destino}</td>
                           <td>S/ {v.precio}</td>
+                          <td>{v.stock > 0 ? v.stock : <span className="text-danger">Sin stock</span>}</td>
                           <td>
                             <button
                               className="btn btn-outline-primary btn-sm"
-                              disabled={!selectedMascotaId}
+                              disabled={!selectedMascotaId || v.stock <= 0}
                               onClick={() => {
                                 setVacunaSeleccionada(v);
                                 setFechaVencimiento('');
@@ -383,87 +345,82 @@ export default function Carrito() {
               </div>
             </>
           )}
-
-          {/* Modal para vacuna */}
-          {showVacunaModal && (
-            <div className="modal show" style={{ display: 'block', background: 'rgba(0,0,0,0.5)' }}>
-              <div className="modal-dialog">
-                <div className="modal-content">
-                  <div className="modal-header">
-                    <h5 className="modal-title">Agregar vacuna al carrito</h5>
-                    <button type="button" className="btn-close" onClick={() => setShowVacunaModal(false)}></button>
-                  </div>
-                  <div className="modal-body">
-                    <p><b>Vacuna:</b> {vacunaSeleccionada?.nombre}</p>
-                    <div className="mb-3">
-                      <label className="form-label">Fecha de vencimiento</label>
-                      <input
-                        type="date"
-                        className="form-control"
-                        value={fechaVencimiento}
-                        onChange={e => setFechaVencimiento(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="modal-footer">
-                    <button className="btn btn-secondary" onClick={() => setShowVacunaModal(false)}>Cancelar</button>
-                    <button
-                      className="btn btn-primary"
-                      disabled={!fechaVencimiento}
-                      onClick={async () => {
-                        await agregarVacuna(vacunaSeleccionada.id, fechaVencimiento);
-                      }}
-                    >
-                      Confirmar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Modal para suscripción */}
-          {showSuscripcionModal && (
-            <div className="modal show" style={{ display: 'block', background: 'rgba(0,0,0,0.5)' }}>
-              <div className="modal-dialog">
-                <div className="modal-content">
-                  <div className="modal-header">
-                    <h5 className="modal-title">Agregar suscripción al carrito</h5>
-                    <button type="button" className="btn-close" onClick={() => setShowSuscripcionModal(false)}></button>
-                  </div>
-                  <div className="modal-body">
-                    <p><b>Suscripción:</b> {suscripcionSeleccionada?.nombre}</p>
-                    <div className="mb-3">
-                      <label className="form-label">Años de suscripción</label>
-                      <input
-                        type="number"
-                        min={1}
-                        className="form-control"
-                        value={aniosSuscripcion}
-                        onChange={e => setAniosSuscripcion(Number(e.target.value))}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="modal-footer">
-                    <button className="btn btn-secondary" onClick={() => setShowSuscripcionModal(false)}>Cancelar</button>
-                    <button
-                      className="btn btn-primary"
-                      disabled={!aniosSuscripcion || aniosSuscripcion < 1}
-                      onClick={async () => {
-                        await agregarSuscripcion(suscripcionSeleccionada.id, aniosSuscripcion);
-                      }}
-                    >
-                      Confirmar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
         </>
+      )}
+
+      {/* Modal para vacuna */}
+      {showVacunaModal && (
+        <div className="modal show" style={{ display: 'block', background: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Agregar vacuna al carrito</h5>
+                <button type="button" className="btn-close" onClick={() => setShowVacunaModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <p><b>Vacuna:</b> {vacunaSeleccionada?.nombre}</p>
+                <div className="mb-3">
+                  <label className="form-label">Fecha de vencimiento</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={fechaVencimiento}
+                    onChange={e => setFechaVencimiento(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setShowVacunaModal(false)}>Cancelar</button>
+                <button
+                  className="btn btn-primary"
+                  disabled={!fechaVencimiento}
+                  onClick={() => agregarVacuna(vacunaSeleccionada.id, fechaVencimiento)}
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para suscripción */}
+      {showSuscripcionModal && (
+        <div className="modal show" style={{ display: 'block', background: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Agregar suscripción al carrito</h5>
+                <button type="button" className="btn-close" onClick={() => setShowSuscripcionModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <p><b>Suscripción:</b> {suscripcionSeleccionada?.nombre}</p>
+                <div className="mb-3">
+                  <label className="form-label">Años de suscripción</label>
+                  <input
+                    type="number"
+                    min={1}
+                    className="form-control"
+                    value={aniosSuscripcion}
+                    onChange={e => setAniosSuscripcion(Number(e.target.value))}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setShowSuscripcionModal(false)}>Cancelar</button>
+                <button
+                  className="btn btn-primary"
+                  disabled={!aniosSuscripcion || aniosSuscripcion < 1}
+                  onClick={() => agregarSuscripcion(suscripcionSeleccionada.id, aniosSuscripcion)}
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

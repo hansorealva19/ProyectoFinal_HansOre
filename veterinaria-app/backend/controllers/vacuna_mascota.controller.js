@@ -31,7 +31,7 @@ exports.getVacunasByMascota = async (req, res) => {
   try {
     const { mascotaId } = req.params;
     const [rows] = await pool.query(
-      `SELECT vm.*, vc.nombre AS nombre_vacuna, vc.descripcion, vc.fabricante
+      `SELECT vm.*, vc.nombre AS nombre_vacuna, vc.descripcion, vc.fabricante, vm.fecha_vencimiento
        FROM vacuna_mascota vm
        JOIN vacuna_catalogo vc ON vm.vacuna_id = vc.id
        WHERE vm.mascota_id = ?

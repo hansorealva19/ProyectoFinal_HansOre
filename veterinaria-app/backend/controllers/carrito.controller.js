@@ -7,99 +7,148 @@ exports.getCarritoActual = async (req, res) => {
     let usuario_id = req.user.id;
 
     if (dueno_dni) {
-      const [users] = await pool.query('SELECT id FROM usuario WHERE dni = ?', [dueno_dni]);
-      if (users.length === 0) return res.status(400).json({ error: 'Dueño no encontrado con ese DNI' });
+      const [users] = await pool.query(
+        'SELECT id FROM usuario WHERE dni = ?',
+        [dueno_dni]
+      );
+      if (users.length === 0) {
+        return res.status(400).json({ error: 'Dueño no encontrado con ese DNI' });
+      }
       usuario_id = users[0].id;
     }
 
     let [carritos] = await pool.query(
-      `SELECT * FROM carrito WHERE usuario_id = ? AND estado = 'activo' LIMIT 1`, [usuario_id]
+      `SELECT * FROM carrito WHERE usuario_id = ? AND estado = 'activo' LIMIT 1`,
+      [usuario_id]
     );
-    let carrito;
     if (carritos.length === 0) {
       const [result] = await pool.query(
-        `INSERT INTO carrito (usuario_id) VALUES (?)`, [usuario_id]
+        'INSERT INTO carrito (usuario_id) VALUES (?)',
+        [usuario_id]
       );
-      [carritos] = await pool.query(`SELECT * FROM carrito WHERE id = ?`, [result.insertId]);
+      [carritos] = await pool.query(
+        'SELECT * FROM carrito WHERE id = ?',
+        [result.insertId]
+      );
     }
-    carrito = carritos[0];
-    // Traer ítems
+    const carrito = carritos[0];
+
     const [items] = await pool.query(
-      `SELECT ci.*, 
-              vc.nombre AS vacuna_nombre, 
-              ts.nombre AS suscripcion_nombre,
-              m.nombre AS mascota_nombre
+      `SELECT 
+         ci.*,
+         vc.nombre  AS vacuna_nombre,
+         ts.nombre  AS suscripcion_nombre,
+         m.nombre   AS mascota_nombre
        FROM carrito_item ci
-       LEFT JOIN vacuna_catalogo vc ON ci.vacuna_catalogo_id = vc.id
+       LEFT JOIN vacuna_catalogo vc ON ci.vacuna_catalogo_id    = vc.id
        LEFT JOIN tipo_suscripcion ts ON ci.tipo_suscripcion_id = ts.id
-       LEFT JOIN mascota m ON ci.mascota_id = m.id
-       WHERE ci.carrito_id = ?`, [carrito.id]
+       LEFT JOIN mascota m           ON ci.mascota_id          = m.id
+       WHERE ci.carrito_id = ?`,
+      [carrito.id]
     );
+
     res.json({ carrito, items });
   } catch (error) {
+    console.error('getCarritoActual error:', error);
     res.status(500).json({ error: error.message });
   }
 };
 
-// Agregar ítem al carrito
+// Agregar ítem al carrito (vacuna o suscripción)
 exports.agregarItem = async (req, res) => {
   try {
-    const { dueno_dni, tipo, vacuna_catalogo_id, tipo_suscripcion_id, cantidad, mascota_id, fecha_vencimiento } = req.body;
+    const {
+      dueno_dni,
+      tipo,
+      vacuna_catalogo_id,
+      tipo_suscripcion_id,
+      cantidad = 1,
+      mascota_id,
+      fecha_vencimiento
+    } = req.body;
 
-    // Buscar usuario_id por DNI
-    const [users] = await pool.query('SELECT id FROM usuario WHERE dni = ?', [dueno_dni]);
-    if (users.length === 0) return res.status(400).json({ error: 'Dueño no encontrado con ese DNI' });
+    // 1) Obtener usuario_id por DNI
+    const [users] = await pool.query(
+      'SELECT id FROM usuario WHERE dni = ?',
+      [dueno_dni]
+    );
+    if (users.length === 0) {
+      return res.status(400).json({ error: 'Dueño no encontrado con ese DNI' });
+    }
     const usuario_id = users[0].id;
 
-    // Obtener o crear carrito activo para ese usuario_id
+    // 2) Obtener o crear carrito activo
     let [carritos] = await pool.query(
-      `SELECT * FROM carrito WHERE usuario_id = ? AND estado = 'activo' LIMIT 1`, [usuario_id]
+      `SELECT * FROM carrito WHERE usuario_id = ? AND estado = 'activo' LIMIT 1`,
+      [usuario_id]
     );
-    let carrito;
     if (carritos.length === 0) {
-      const [result] = await pool.query(
-        `INSERT INTO carrito (usuario_id) VALUES (?)`, [usuario_id]
+      const [r] = await pool.query(
+        'INSERT INTO carrito (usuario_id) VALUES (?)',
+        [usuario_id]
       );
-      [carritos] = await pool.query(`SELECT * FROM carrito WHERE id = ?`, [result.insertId]);
+      [carritos] = await pool.query(
+        'SELECT * FROM carrito WHERE id = ?',
+        [r.insertId]
+      );
     }
-    carrito = carritos[0];
+    const carrito = carritos[0];
 
+    // 3) Calcular precio_unitario y actualizar stock si es vacuna
     let precio_unitario = 0;
-
     if (tipo === 'vacuna') {
-      const [vacunas] = await pool.query(`SELECT precio FROM vacuna_catalogo WHERE id = ?`, [vacuna_catalogo_id]);
-      if (vacunas.length === 0) return res.status(400).json({ error: 'Vacuna no encontrada' });
-      precio_unitario = vacunas[0].precio;
-    } else if (tipo === 'suscripcion') {
-      const [tipos] = await pool.query(
-        `SELECT precio FROM tipo_suscripcion WHERE id = ?`, [tipo_suscripcion_id]
+      const [[vacuna]] = await pool.query(
+        'SELECT stock, precio FROM vacuna_catalogo WHERE id = ?',
+        [vacuna_catalogo_id]
       );
-      if (tipos.length === 0) return res.status(400).json({ error: 'Tipo de suscripción no encontrado' });
-      precio_unitario = tipos[0].precio;
+      if (!vacuna) {
+        return res.status(404).json({ error: 'Vacuna no encontrada' });
+      }
+      if (vacuna.stock < cantidad) {
+        return res.status(400).json({ error: 'Stock insuficiente' });
+      }
+      await pool.query(
+        'UPDATE vacuna_catalogo SET stock = stock - ? WHERE id = ?',
+        [cantidad, vacuna_catalogo_id]
+      );
+      precio_unitario = vacuna.precio;
+    } else if (tipo === 'suscripcion') {
+      const [[ts]] = await pool.query(
+        'SELECT precio FROM tipo_suscripcion WHERE id = ?',
+        [tipo_suscripcion_id]
+      );
+      if (!ts) {
+        return res.status(404).json({ error: 'Tipo de suscripción no encontrado' });
+      }
+      precio_unitario = ts.precio;
     } else {
       return res.status(400).json({ error: 'Tipo inválido' });
     }
 
-    const cant = cantidad || 1;
+    // 4) Insertar ítem
+    const cant = cantidad;
     const total = precio_unitario * cant;
-
     await pool.query(
-      `INSERT INTO carrito_item (carrito_id, tipo, vacuna_catalogo_id, cantidad, precio_unitario, total, mascota_id, fecha_vencimiento, tipo_suscripcion_id)
+      `INSERT INTO carrito_item
+         (carrito_id, tipo, vacuna_catalogo_id, tipo_suscripcion_id,
+          mascota_id, cantidad, precio_unitario, total, fecha_vencimiento)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         carrito.id,
         tipo,
-        vacuna_catalogo_id || null,
+        tipo === 'vacuna' ? vacuna_catalogo_id : null,
+        tipo === 'suscripcion' ? tipo_suscripcion_id : null,
+        mascota_id || null,
         cant,
         precio_unitario,
         total,
-        mascota_id || null, // <-- Aquí debe llegar el ID correcto
-        fecha_vencimiento || null,
-        tipo_suscripcion_id || null
+        fecha_vencimiento || null
       ]
     );
+
     res.json({ message: 'Ítem agregado al carrito' });
   } catch (error) {
+    console.error('agregarItem error:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -109,126 +158,184 @@ exports.eliminarItem = async (req, res) => {
   try {
     const dueno_dni = req.body.dueno_dni || req.query.dueno_dni;
     const { itemId } = req.params;
-    if (!dueno_dni) return res.status(400).json({ error: 'Debe enviar el DNI del dueño' });
+    if (!dueno_dni) {
+      return res.status(400).json({ error: 'Debe enviar el DNI del dueño' });
+    }
 
-    // Busca el usuario dueño
-    const [users] = await pool.query('SELECT id FROM usuario WHERE dni = ?', [dueno_dni]);
-    if (users.length === 0) return res.status(400).json({ error: 'Dueño no encontrado con ese DNI' });
+    // 1) Verificar dueño y carrito
+    const [users] = await pool.query(
+      'SELECT id FROM usuario WHERE dni = ?',
+      [dueno_dni]
+    );
+    if (users.length === 0) {
+      return res.status(400).json({ error: 'Dueño no encontrado con ese DNI' });
+    }
     const usuario_id = users[0].id;
 
-    // Verifica que el ítem pertenezca a un carrito activo del dueño
     const [items] = await pool.query(
-      `SELECT ci.* FROM carrito_item ci
-       JOIN carrito c ON ci.carrito_id = c.id
-       WHERE ci.id = ? AND c.usuario_id = ? AND c.estado = 'activo'`,
+      `SELECT ci.*
+         FROM carrito_item ci
+         JOIN carrito c ON ci.carrito_id = c.id
+        WHERE ci.id = ? AND c.usuario_id = ? AND c.estado = 'activo'`,
       [itemId, usuario_id]
     );
-    if (items.length === 0) return res.status(404).json({ error: 'Ítem no encontrado' });
-    await pool.query(`DELETE FROM carrito_item WHERE id = ?`, [itemId]);
-    res.json({ message: 'Ítem eliminado' });
+    if (items.length === 0) {
+      return res.status(404).json({ error: 'Ítem no encontrado' });
+    }
+    const item = items[0];
+
+    // 2) Si es vacuna, restaurar stock
+    if (item.tipo === 'vacuna' && item.vacuna_catalogo_id) {
+      await pool.query(
+        'UPDATE vacuna_catalogo SET stock = stock + ? WHERE id = ?',
+        [item.cantidad, item.vacuna_catalogo_id]
+      );
+    }
+
+    // 3) Eliminar el ítem
+    await pool.query(
+      'DELETE FROM carrito_item WHERE id = ?',
+      [itemId]
+    );
+
+    res.json({ message: 'Ítem eliminado y stock restaurado si aplicaba' });
   } catch (error) {
+    console.error('eliminarItem error:', error);
     res.status(500).json({ error: error.message });
   }
 };
 
+// Vaciar carrito
 exports.vaciarCarrito = async (req, res) => {
   try {
-    const dueno_dni = req.body.dueno_dni || req.query.dueno_dni;
-    if (!dueno_dni) return res.status(400).json({ error: 'Debe enviar el DNI del dueño' });
+    const { dueno_dni } = req.body;
+    if (!dueno_dni) {
+      return res.status(400).json({ error: 'Debe enviar el DNI del dueño' });
+    }
 
-    // Busca el usuario dueño
-    const [users] = await pool.query('SELECT id FROM usuario WHERE dni = ?', [dueno_dni]);
-    if (users.length === 0) return res.status(400).json({ error: 'Dueño no encontrado con ese DNI' });
+    // 1) Obtener usuario_id
+    const [users] = await pool.query(
+      'SELECT id FROM usuario WHERE dni = ?',
+      [dueno_dni]
+    );
+    if (users.length === 0) {
+      return res.status(400).json({ error: 'Dueño no encontrado con ese DNI' });
+    }
     const usuario_id = users[0].id;
 
-    // Busca el carrito activo
+    // 2) Obtener carrito activo
     const [carritos] = await pool.query(
-      `SELECT * FROM carrito WHERE usuario_id = ? AND estado = 'activo' LIMIT 1`, [usuario_id]
+      'SELECT id FROM carrito WHERE usuario_id = ? AND estado = "activo" LIMIT 1',
+      [usuario_id]
     );
-    if (carritos.length === 0) return res.json({ message: 'Carrito ya vacío' });
-    const carrito = carritos[0];
-    await pool.query(`DELETE FROM carrito_item WHERE carrito_id = ?`, [carrito.id]);
-    res.json({ message: 'Carrito vaciado' });
+    if (carritos.length === 0) {
+      return res.json({ message: 'Carrito ya vacío' });
+    }
+    const carrito_id = carritos[0].id;
+
+    // 3) Obtener todos los ítems del carrito
+    const [items] = await pool.query(
+      'SELECT tipo, vacuna_catalogo_id, cantidad FROM carrito_item WHERE carrito_id = ?',
+      [carrito_id]
+    );
+
+    // 4) Restaurar stock de cada vacuna
+    for (const item of items) {
+      if (item.tipo === 'vacuna' && item.vacuna_catalogo_id) {
+        await pool.query(
+          'UPDATE vacuna_catalogo SET stock = stock + ? WHERE id = ?',
+          [item.cantidad, item.vacuna_catalogo_id]
+        );
+      }
+    }
+
+    // 5) Borrar todos los ítems
+    await pool.query(
+      'DELETE FROM carrito_item WHERE carrito_id = ?',
+      [carrito_id]
+    );
+
+    res.json({ message: 'Carrito vaciado y stock restaurado' });
   } catch (error) {
+    console.error('vaciarCarrito error:', error);
     res.status(500).json({ error: error.message });
   }
 };
 
-// Simular pago del carrito
+// Simular pago del carrito, registrar pago, vacunas y suscripciones
 exports.pagarCarrito = async (req, res) => {
   try {
-    const dueno_dni = req.body.dueno_dni || req.query.dueno_dni;
-    const { metodo = 'simulado' } = req.body;
+    const { dueno_dni, metodo } = req.body;
 
-    // Busca el usuario dueño
-    const [users] = await pool.query('SELECT id FROM usuario WHERE dni = ?', [dueno_dni]);
-    if (users.length === 0) return res.status(400).json({ error: 'Dueño no encontrado con ese DNI' });
+    const [users] = await pool.query(
+      'SELECT id FROM usuario WHERE dni = ?',
+      [dueno_dni]
+    );
+    if (users.length === 0) {
+      return res.status(400).json({ error: 'Dueño no encontrado' });
+    }
     const usuario_id = users[0].id;
 
-    // Busca el carrito activo
     const [carritos] = await pool.query(
-      `SELECT * FROM carrito WHERE usuario_id = ? AND estado = 'activo' LIMIT 1`, [usuario_id]
+      'SELECT id FROM carrito WHERE usuario_id = ? AND estado = "activo" LIMIT 1',
+      [usuario_id]
     );
-    if (carritos.length === 0) return res.status(400).json({ error: 'No hay carrito activo' });
-    const carrito = carritos[0];
+    if (carritos.length === 0) {
+      return res.status(400).json({ error: 'Carrito no encontrado' });
+    }
+    const carrito_id = carritos[0].id;
 
-    // Suma total
-    const [itemsTotal] = await pool.query(
-      `SELECT SUM(total) AS total FROM carrito_item WHERE carrito_id = ?`, [carrito.id]
+    const [[{ monto_total }]] = await pool.query(
+      'SELECT SUM(total) AS monto_total FROM carrito_item WHERE carrito_id = ?',
+      [carrito_id]
     );
-    const monto_total = itemsTotal[0].total || 0;
-    if (monto_total === 0) return res.status(400).json({ error: 'El carrito está vacío' });
 
-    // Simula pago exitoso
     await pool.query(
-      `INSERT INTO pago (carrito_id, usuario_id, monto_total, metodo, estado)
-       VALUES (?, ?, ?, ?, 'exitoso')`,
-      [carrito.id, usuario_id, monto_total, metodo]
-    );
-    // Cambia estado del carrito a comprado
-    await pool.query(
-      `UPDATE carrito SET estado = 'comprado' WHERE id = ?`, [carrito.id]
+      'UPDATE carrito SET estado = "comprado" WHERE id = ?',
+      [carrito_id]
     );
 
-    // REGISTRAR VACUNAS Y SUSCRIPCIONES EN LA MASCOTA
+    await pool.query(
+      `INSERT INTO pago (carrito_id, usuario_id, monto_total, metodo)
+       VALUES (?, ?, ?, ?)`,
+      [carrito_id, usuario_id, monto_total, metodo]
+    );
+
     const [items] = await pool.query(
-      `SELECT * FROM carrito_item WHERE carrito_id = ?`, [carrito.id]
+      'SELECT * FROM carrito_item WHERE carrito_id = ?',
+      [carrito_id]
     );
     for (const item of items) {
-      // VACUNA
       if (item.tipo === 'vacuna' && item.vacuna_catalogo_id && item.mascota_id) {
         await pool.query(
-          `INSERT INTO vacuna_mascota (mascota_id, vacuna_id, fecha_aplicacion, fecha_vencimiento, veterinario_id)
+          `INSERT INTO vacuna_mascota
+             (mascota_id, vacuna_id, fecha_aplicacion, fecha_vencimiento, veterinario_id)
            VALUES (?, ?, NOW(), ?, ?)`,
           [item.mascota_id, item.vacuna_catalogo_id, item.fecha_vencimiento, req.user.id]
         );
       }
-      // SUSCRIPCIÓN
       if (item.tipo === 'suscripcion' && item.mascota_id && item.tipo_suscripcion_id) {
-        // Cambia TODAS las suscripciones activas de la mascota a inactiva (sin importar tipo)
         await pool.query(
-          `UPDATE suscripcion SET estado = 'inactiva'
+          `UPDATE suscripcion
+             SET estado = 'inactiva'
            WHERE mascota_id = ? AND estado = 'activa'`,
           [item.mascota_id]
         );
-
-        // La nueva suscripción inicia HOY
-        let fecha_inicio = new Date();
-        let duracion = item.cantidad || 1; // años
-        let fecha_fin = new Date(fecha_inicio);
-        fecha_fin.setFullYear(fecha_inicio.getFullYear() + duracion);
-
-        // Inserta la nueva suscripción como activa
+        const fecha_inicio = new Date();
+        const fecha_fin = new Date(fecha_inicio);
+        fecha_fin.setFullYear(fecha_inicio.getFullYear() + (item.cantidad || 1));
         await pool.query(
-          `INSERT INTO suscripcion (mascota_id, tipo_id, fecha_inicio, fecha_fin, estado)
+          `INSERT INTO suscripcion
+             (mascota_id, tipo_id, fecha_inicio, fecha_fin, estado)
            VALUES (?, ?, ?, ?, 'activa')`,
           [item.mascota_id, item.tipo_suscripcion_id, fecha_inicio, fecha_fin]
         );
       }
     }
 
-    res.json({ message: 'Pago registrado exitosamente', monto_total });
+    res.json({ monto_total });
   } catch (error) {
+    console.error('pagarCarrito error:', error);
     res.status(500).json({ error: error.message });
   }
 };
