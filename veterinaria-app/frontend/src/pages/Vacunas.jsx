@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import api from '../services/api';
 
 // Registrar componentes de Chart.js
@@ -8,14 +10,6 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function Vacunas() {
   const [catalogo, setCatalogo] = useState([]);
-  const [form, setForm] = useState({
-    nombre: '',
-    especie_destino: '',
-    precio: '',
-    fabricante: '',
-    descripcion: '',
-    stock: 0
-  });
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [mostrarVacunas, setMostrarVacunas] = useState(false);
   const [mostrarGrafico, setMostrarGrafico] = useState(false); // Controla la visibilidad del gráfico
@@ -34,30 +28,6 @@ export default function Vacunas() {
     };
     fetchCatalogo();
   }, []);
-
-  const handleChange = e =>
-    setForm({ ...form, [e.target.name]: e.target.value });
-
-  const handleAdd = async e => {
-    e.preventDefault();
-    try {
-      await api.post('/vacunas/catalogo', form);
-      setMensaje('Vacuna registrada correctamente');
-      setForm({
-        nombre: '',
-        especie_destino: '',
-        precio: '',
-        fabricante: '',
-        descripcion: '',
-        stock: 0
-      });
-      setMostrarFormulario(false);
-      const res = await api.get('/vacunas/catalogo');
-      setCatalogo(res.data);
-    } catch {
-      setMensaje('Error al registrar vacuna');
-    }
-  };
 
   const handleAumentarStock = async (id, cantidad) => {
     try {
@@ -105,6 +75,50 @@ export default function Vacunas() {
     }
   };
 
+  // Configuración de Formik y Yup
+  const formik = useFormik({
+    initialValues: {
+      nombre: '',
+      especie_destino: '',
+      precio: '',
+      fabricante: '',
+      descripcion: '',
+      stock: 0
+    },
+    validationSchema: Yup.object({
+      nombre: Yup.string()
+        .min(2, 'El nombre debe tener al menos 2 caracteres')
+        .required('El nombre es obligatorio'),
+      especie_destino: Yup.string()
+        .min(2, 'La especie destino debe tener al menos 2 caracteres')
+        .required('La especie destino es obligatoria'),
+      precio: Yup.number()
+        .min(0, 'El precio debe ser mayor o igual a 0')
+        .required('El precio es obligatorio'),
+      fabricante: Yup.string()
+        .min(2, 'El fabricante debe tener al menos 2 caracteres')
+        .required('El fabricante es obligatorio'),
+      descripcion: Yup.string()
+        .min(5, 'La descripción debe tener al menos 5 caracteres')
+        .required('La descripción es obligatoria'),
+      stock: Yup.number()
+        .min(0, 'El stock debe ser mayor o igual a 0')
+        .required('El stock es obligatorio')
+    }),
+    onSubmit: async (values, { resetForm }) => {
+      try {
+        await api.post('/vacunas/catalogo', values);
+        setMensaje('Vacuna registrada correctamente');
+        resetForm();
+        setMostrarFormulario(false);
+        const res = await api.get('/vacunas/catalogo');
+        setCatalogo(res.data);
+      } catch {
+        setMensaje('Error al registrar vacuna');
+      }
+    }
+  });
+
   return (
     <div className="container mt-4">
       <div className="card shadow-lg border-0">
@@ -138,71 +152,90 @@ export default function Vacunas() {
 
           {/* Formulario para agregar vacunas */}
           {mostrarFormulario && (
-            <form onSubmit={handleAdd} className="row g-3 mb-4">
+            <form onSubmit={formik.handleSubmit} className="row g-3 mb-4">
               <div className="col-md-6">
                 <label className="form-label">Nombre</label>
                 <input
                   name="nombre"
-                  className="form-control"
-                  onChange={handleChange}
-                  value={form.nombre}
-                  required
+                  className={`form-control ${formik.touched.nombre && formik.errors.nombre ? 'is-invalid' : ''}`}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  value={formik.values.nombre}
                 />
+                {formik.touched.nombre && formik.errors.nombre && (
+                  <div className="invalid-feedback">{formik.errors.nombre}</div>
+                )}
               </div>
               <div className="col-md-6">
                 <label className="form-label">Especie Destino</label>
                 <input
                   name="especie_destino"
-                  className="form-control"
-                  onChange={handleChange}
-                  value={form.especie_destino}
-                  required
+                  className={`form-control ${formik.touched.especie_destino && formik.errors.especie_destino ? 'is-invalid' : ''}`}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  value={formik.values.especie_destino}
                 />
+                {formik.touched.especie_destino && formik.errors.especie_destino && (
+                  <div className="invalid-feedback">{formik.errors.especie_destino}</div>
+                )}
               </div>
               <div className="col-md-4">
                 <label className="form-label">Precio</label>
                 <input
                   type="number"
                   name="precio"
-                  className="form-control"
-                  onChange={handleChange}
-                  value={form.precio}
-                  required
+                  className={`form-control ${formik.touched.precio && formik.errors.precio ? 'is-invalid' : ''}`}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  value={formik.values.precio}
                 />
+                {formik.touched.precio && formik.errors.precio && (
+                  <div className="invalid-feedback">{formik.errors.precio}</div>
+                )}
               </div>
               <div className="col-md-4">
                 <label className="form-label">Stock</label>
                 <input
                   type="number"
                   name="stock"
-                  className="form-control"
-                  onChange={handleChange}
-                  value={form.stock}
-                  required
+                  className={`form-control ${formik.touched.stock && formik.errors.stock ? 'is-invalid' : ''}`}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  value={formik.values.stock}
                 />
+                {formik.touched.stock && formik.errors.stock && (
+                  <div className="invalid-feedback">{formik.errors.stock}</div>
+                )}
               </div>
               <div className="col-md-4">
                 <label className="form-label">Fabricante</label>
                 <input
                   name="fabricante"
-                  className="form-control"
-                  onChange={handleChange}
-                  value={form.fabricante}
-                  required
+                  className={`form-control ${formik.touched.fabricante && formik.errors.fabricante ? 'is-invalid' : ''}`}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  value={formik.values.fabricante}
                 />
+                {formik.touched.fabricante && formik.errors.fabricante && (
+                  <div className="invalid-feedback">{formik.errors.fabricante}</div>
+                )}
               </div>
               <div className="col-12">
                 <label className="form-label">Descripción</label>
                 <textarea
                   name="descripcion"
-                  className="form-control"
+                  className={`form-control ${formik.touched.descripcion && formik.errors.descripcion ? 'is-invalid' : ''}`}
                   rows="3"
-                  onChange={handleChange}
-                  value={form.descripcion}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  value={formik.values.descripcion}
                 ></textarea>
+                {formik.touched.descripcion && formik.errors.descripcion && (
+                  <div className="invalid-feedback">{formik.errors.descripcion}</div>
+                )}
               </div>
               <div className="col-12">
-                <button className="btn btn-success w-100">Registrar Vacuna</button>
+                <button type="submit" className="btn btn-success w-100">Registrar Vacuna</button>
               </div>
             </form>
           )}
