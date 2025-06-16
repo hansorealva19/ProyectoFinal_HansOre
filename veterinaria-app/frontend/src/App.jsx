@@ -10,99 +10,80 @@ import HistoriaClinica from './pages/HistoriaClinica';
 import Carrito from './pages/Carrito';
 import Perfil from './pages/Perfil';
 
-import { useState } from 'react';
-
-// Componente para rutas protegidas
-function PrivateRoute({ children }) {
+function PrivateRoute({ children, roles }) {
   const token = localStorage.getItem('token');
-  return token ? children : <Navigate to="/login" replace />;
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!token) return <Navigate to="/login" replace />;
+  if (roles && !roles.includes(user.rol)) return <Navigate to="/mascotas" replace />;
+  return children;
 }
 
-function App() {
-  const [selectedMascotaId, setSelectedMascotaId] = useState(null);
-
+export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Redirige la raíz al login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
-
         <Route path="/" element={<Layout />}>
-          {/* Rutas públicas */}
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
-
-          {/* Rutas privadas */}
           <Route
             path="mascotas"
             element={
-              <PrivateRoute>
-                <Mascotas setSelectedMascotaId={setSelectedMascotaId} />
+              <PrivateRoute roles={['dueño', 'veterinario']}>
+                <Mascotas />
               </PrivateRoute>
             }
           />
-
           <Route
             path="mascotas/:id/historia"
             element={
-              <PrivateRoute>
+              <PrivateRoute roles={['dueño', 'veterinario']}>
                 <HistoriaClinica />
               </PrivateRoute>
             }
           />
-
           <Route
             path="consultas"
             element={
-              <PrivateRoute>
-                <Consultas mascotaId={selectedMascotaId} />
+              <PrivateRoute roles={['veterinario']}>
+                <Consultas />
               </PrivateRoute>
             }
           />
-
           <Route
             path="vacunas"
             element={
-              <PrivateRoute>
-                <Vacunas mascotaId={selectedMascotaId} />
+              <PrivateRoute roles={['veterinario']}>
+                <Vacunas />
               </PrivateRoute>
             }
           />
-
           <Route
             path="suscripciones"
             element={
-              <PrivateRoute>
-                <Suscripciones mascotaId={selectedMascotaId} />
+              <PrivateRoute roles={['veterinario']}>
+                <Suscripciones />
               </PrivateRoute>
             }
           />
-
           <Route
             path="carrito"
             element={
-              <PrivateRoute>
-                {JSON.parse(localStorage.getItem('user'))?.rol === 'veterinario'
-                  ? <Carrito />
-                  : <Navigate to="/mascotas" replace />}
+              <PrivateRoute roles={['veterinario']}>
+                <Carrito />
               </PrivateRoute>
             }
           />
-
           <Route
             path="perfil"
             element={
-              <PrivateRoute>
+              <PrivateRoute roles={['dueño', 'veterinario']}>
                 <Perfil />
               </PrivateRoute>
             }
           />
-          {/* Redirigir cualquier ruta desconocida al login */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
         </Route>
       </Routes>
     </BrowserRouter>
   );
 }
-
-export default App;

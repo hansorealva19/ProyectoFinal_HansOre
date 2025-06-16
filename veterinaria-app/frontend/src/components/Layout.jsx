@@ -32,26 +32,43 @@ export default function Layout() {
           <i className="bi bi-heart-pulse me-2"></i>Veterinaria
         </Link>
         <ul className="nav nav-pills flex-column mb-auto">
+          {/* Mascotas */}
           <li className="nav-item">
             <Link className={`nav-link${isActive('/mascotas') ? ' active bg-light text-primary fw-bold' : ' text-white'}`} to="/mascotas">
               <i className="bi bi-house-door me-2"></i>Mascotas
             </Link>
           </li>
-          <li>
-            <Link className={`nav-link${isActive('/consultas') ? ' active bg-light text-primary fw-bold' : ' text-white'}`} to="/consultas">
-              <i className="bi bi-clipboard2-pulse me-2"></i>Consultas
-            </Link>
-          </li>
-          <li>
-            <Link className={`nav-link${isActive('/vacunas') ? ' active bg-light text-primary fw-bold' : ' text-white'}`} to="/vacunas">
-              <i className="bi bi-capsule-pill me-2"></i>Vacunas
-            </Link>
-          </li>
-          <li>
-            <Link className={`nav-link${isActive('/suscripciones') ? ' active bg-light text-primary fw-bold' : ' text-white'}`} to="/suscripciones">
-              <i className="bi bi-card-checklist me-2"></i>Suscripciones
-            </Link>
-          </li>
+
+          {/* Opciones solo para veterinarios */}
+          {isVeterinario && (
+            <>
+              <li>
+                <Link className={`nav-link${isActive('/consultas') ? ' active bg-light text-primary fw-bold' : ' text-white'}`} to="/consultas">
+                  <i className="bi bi-clipboard2-pulse me-2"></i>Consultas
+                </Link>
+              </li>
+              <li>
+                <Link className={`nav-link${isActive('/vacunas') ? ' active bg-light text-primary fw-bold' : ' text-white'}`} to="/vacunas">
+                  <i className="bi bi-capsule-pill me-2"></i>Vacunas
+                </Link>
+              </li>
+              <li>
+                <Link className={`nav-link${isActive('/suscripciones') ? ' active bg-light text-primary fw-bold' : ' text-white'}`} to="/suscripciones">
+                  <i className="bi bi-card-checklist me-2"></i>Suscripciones
+                </Link>
+              </li>
+              <li>
+                <Link className={`nav-link${isActive('/carrito') ? ' active bg-light text-primary fw-bold' : ' text-white'}`} to="/carrito">
+                  <i className="bi bi-cart me-2"></i>Carrito
+                  {carritoCount > 0 && (
+                    <span className="badge bg-danger ms-2">{carritoCount}</span>
+                  )}
+                </Link>
+              </li>
+            </>
+          )}
+
+          {/* Perfil */}
           <li>
             <Link className={`nav-link${isActive('/perfil') ? ' active bg-light text-primary fw-bold' : ' text-white'}`} to="/perfil">
               <i className="bi bi-person-circle me-2"></i>Perfil
