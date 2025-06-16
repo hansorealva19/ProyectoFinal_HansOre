@@ -2,31 +2,15 @@ import { useEffect, useState } from 'react';
 import api from '../services/api';
 
 export default function Vacunas() {
-  const [dni, setDni] = useState('');
-  const [mascotas, setMascotas] = useState([]);
-  const [selectedMascotaId, setSelectedMascotaId] = useState(null);
   const [catalogo, setCatalogo] = useState([]);
-  const [form, setForm] = useState({ vacuna_id: '', fecha_aplicacion: '', fecha_vencimiento: '' });
-  const [vacunasAplicadas, setVacunasAplicadas] = useState([]);
-
-  // Buscar mascotas por DNI
-  const buscarMascotas = async () => {
-    try {
-      const res = await api.get('/mascotas');
-      const mascotasFiltradas = res.data.filter(m => m.dni === dni);
-      setMascotas(mascotasFiltradas);
-      setSelectedMascotaId(null);
-      setVacunasAplicadas([]);
-    } catch {
-      alert('Error al buscar mascotas');
-    }
-  };
+  const [form, setForm] = useState({ nombre: '', especie_destino: '', precio: '', fabricante: '', descripcion: '' });
+  const [mostrarFormulario, setMostrarFormulario] = useState(false); // Estado para controlar la visibilidad del formulario
 
   // Cargar catálogo de vacunas
   useEffect(() => {
     const fetchCatalogo = async () => {
       try {
-        const res = await api.get('/vacuna-mascota/catalogo');
+        const res = await api.get('/vacunas/catalogo');
         setCatalogo(res.data);
       } catch {
         alert('Error al cargar catálogo de vacunas');
@@ -35,36 +19,17 @@ export default function Vacunas() {
     fetchCatalogo();
   }, []);
 
-  // Cargar vacunas aplicadas a la mascota seleccionada
-  useEffect(() => {
-    const fetchVacunas = async () => {
-      if (!selectedMascotaId) return;
-      try {
-        const res = await api.get(`/vacuna-mascota/${selectedMascotaId}`);
-        setVacunasAplicadas(res.data);
-      } catch {
-        alert('Error al cargar vacunas aplicadas');
-      }
-    };
-    fetchVacunas();
-  }, [selectedMascotaId]);
-
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleAdd = async e => {
     e.preventDefault();
-    if (!selectedMascotaId || !form.vacuna_id) {
-      alert('Seleccione mascota y vacuna');
-      return;
-    }
     try {
-      await api.post('/vacuna-mascota', {
-        ...form,
-        mascota_id: selectedMascotaId
-      });
-      setForm({ vacuna_id: '', fecha_aplicacion: '', fecha_vencimiento: '' });
-      const res = await api.get(`/vacuna-mascota/${selectedMascotaId}`);
-      setVacunasAplicadas(res.data);
+      await api.post('/vacunas/catalogo', form);
+      alert('Vacuna registrada correctamente');
+      setForm({ nombre: '', especie_destino: '', precio: '', fabricante: '', descripcion: '' });
+      setMostrarFormulario(false); // Ocultar el formulario después de registrar
+      const res = await api.get('/vacunas/catalogo');
+      setCatalogo(res.data);
     } catch {
       alert('Error al registrar vacuna');
     }
@@ -72,94 +37,89 @@ export default function Vacunas() {
 
   return (
     <div className="container">
-      <h3 className="mb-4">Registrar Vacunación</h3>
-      {/* Paso 1: Buscar dueño por DNI */}
-      <div className="mb-3 d-flex align-items-center">
-        <input
-          type="text"
-          placeholder="DNI del dueño"
-          value={dni}
-          onChange={e => setDni(e.target.value)}
-          className="form-control me-2"
-          style={{ maxWidth: 220 }}
-        />
-        <button onClick={buscarMascotas} disabled={!dni} className="btn btn-primary">
-          Buscar Mascotas
-        </button>
-      </div>
+      <h3 className="mb-4">Catálogo de Vacunas</h3>
 
-      {/* Paso 2: Mostrar mascotas del dueño */}
-      {mascotas.length > 0 && (
-        <div className="mb-3">
-          <strong>Seleccione una mascota:</strong>
-          <ul className="list-group mt-2">
-            {mascotas.map(m => (
-              <li
-                key={m.id}
-                onClick={() => setSelectedMascotaId(m.id)}
-                className={`list-group-item list-group-item-action${m.id === selectedMascotaId ? ' active' : ''}`}
-                style={{ cursor: 'pointer' }}
-              >
-                {m.nombre} - {m.raza} - {m.especie}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* Botón para mostrar/ocultar el formulario */}
+      <button
+        className={`btn ${mostrarFormulario ? 'btn-secondary' : 'btn-primary'} mb-4`}
+        onClick={() => setMostrarFormulario(!mostrarFormulario)}
+      >
+        {mostrarFormulario ? 'Cancelar' : 'Agregar Nueva Vacuna'}
+      </button>
 
-      {/* Paso 3: Formulario de vacunación */}
-      {selectedMascotaId && (
-        <form onSubmit={handleAdd} className="row g-2 align-items-center mb-4">
+      {/* Formulario para registrar nueva vacuna */}
+      {mostrarFormulario && (
+        <form onSubmit={handleAdd} className="row g-3 mb-4">
           <div className="col-md-4">
-            <select
-              name="vacuna_id"
-              value={form.vacuna_id}
-              onChange={handleChange}
-              className="form-select"
-              required
-            >
-              <option value="">Seleccione vacuna</option>
-              {catalogo.map(v => (
-                <option key={v.id} value={v.id}>
-                  {v.nombre} ({v.especie_destino}) - S/ {v.precio}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="col-md-3">
+            <label className="form-label">Nombre</label>
             <input
-              type="date"
-              name="fecha_aplicacion"
+              name="nombre"
+              placeholder="Nombre de la vacuna"
               className="form-control"
               onChange={handleChange}
-              value={form.fecha_aplicacion}
+              value={form.nombre}
               required
             />
           </div>
-          <div className="col-md-3">
+          <div className="col-md-4">
+            <label className="form-label">Especie Destino</label>
             <input
-              type="date"
-              name="fecha_vencimiento"
+              name="especie_destino"
+              placeholder="Ej: Canina, Felina"
               className="form-control"
               onChange={handleChange}
-              value={form.fecha_vencimiento}
+              value={form.especie_destino}
               required
             />
           </div>
-          <div className="col-md-2">
+          <div className="col-md-4">
+            <label className="form-label">Precio</label>
+            <input
+              type="number"
+              name="precio"
+              placeholder="Precio en S/"
+              className="form-control"
+              onChange={handleChange}
+              value={form.precio}
+              required
+            />
+          </div>
+          <div className="col-md-6">
+            <label className="form-label">Fabricante</label>
+            <input
+              name="fabricante"
+              placeholder="Fabricante de la vacuna"
+              className="form-control"
+              onChange={handleChange}
+              value={form.fabricante}
+            />
+          </div>
+          <div className="col-md-6">
+            <label className="form-label">Descripción</label>
+            <textarea
+              name="descripcion"
+              placeholder="Descripción de la vacuna"
+              className="form-control"
+              rows={3}
+              onChange={handleChange}
+              value={form.descripcion}
+            />
+          </div>
+          <div className="col-12">
             <button className="btn btn-success w-100">Registrar Vacuna</button>
           </div>
         </form>
       )}
 
-      {/* Catálogo de vacunas solo informativo */}
-      <h4>Catálogo de Vacunas</h4>
+      {/* Catálogo de vacunas */}
       <table className="table table-striped">
         <thead>
           <tr>
             <th>Vacuna</th>
             <th>Especie</th>
             <th>Precio</th>
+            <th>Fabricante</th>
+            <th>Descripción</th>
           </tr>
         </thead>
         <tbody>
@@ -168,37 +128,12 @@ export default function Vacunas() {
               <td>{v.nombre}</td>
               <td>{v.especie_destino}</td>
               <td>S/ {v.precio}</td>
+              <td>{v.fabricante}</td>
+              <td>{v.descripcion}</td>
             </tr>
           ))}
         </tbody>
       </table>
-
-      {/* Paso 4: Historial de vacunas aplicadas */}
-      {selectedMascotaId && (
-        <div>
-          <h4>Vacunas Aplicadas</h4>
-          <table className="table table-striped">
-            <thead>
-              <tr>
-                <th>Vacuna</th>
-                <th>Aplicada</th>
-                <th>Vence</th>
-                <th>Fabricante</th>
-              </tr>
-            </thead>
-            <tbody>
-              {vacunasAplicadas.map(v => (
-                <tr key={v.id}>
-                  <td>{v.nombre_vacuna}</td>
-                  <td>{v.fecha_aplicacion?.slice(0,10)}</td>
-                  <td>{v.fecha_vencimiento?.slice(0,10)}</td>
-                  <td>{v.fabricante}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,9 +1,11 @@
-// backend/routes/vacuna.routes.js
 const router = require('express').Router();
-const { authMiddleware } = require('../middleware/auth.js');  // O como sea que llames al middleware de autenticación
-const { addVacuna, getVacunasByMascota } = require('../controllers/vacuna.controller.js');
+const { authMiddleware, authorizeRoles } = require('../middleware/auth');
+const { getCatalogo, addVacunaCatalogo } = require('../controllers/vacuna.controller');
 
-router.post('/', authMiddleware, addVacuna);
-router.get('/:mascotaId', authMiddleware, getVacunasByMascota);
+// Listar catálogo de vacunas
+router.get('/catalogo', authMiddleware, getCatalogo);
+
+// Registrar nueva vacuna en el catálogo
+router.post('/catalogo', authMiddleware, authorizeRoles('veterinario'), addVacunaCatalogo);
 
 module.exports = router;
