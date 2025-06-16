@@ -6,6 +6,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem('user'));
+  const token = localStorage.getItem('token'); // Verifica si hay un token
   const isVeterinario = user?.rol === 'veterinario';
   const { carritoCount } = useCarrito();
 
@@ -57,7 +58,10 @@ export default function Layout() {
             </Link>
           </li>
         </ul>
-        <button onClick={handleLogout} className="btn btn-light mt-4 w-100">Logout</button>
+        {/* Mostrar el botón de Logout solo si el usuario está logueado */}
+        {token && (
+          <button onClick={handleLogout} className="btn btn-light mt-4 w-100">Logout</button>
+        )}
       </nav>
 
       {/* Main content */}
@@ -79,7 +83,7 @@ export default function Layout() {
                   </span>
                 )}
               </Link>
-              {/* Popover resumen mejorado, más grande y con mascota */}
+              {/* Popover resumen */}
               {showResumen && (
                 <div
                   className="shadow-lg rounded-4 bg-white p-0"
