@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`usuario` (
   UNIQUE INDEX `usuario` (`usuario` ASC) VISIBLE,
   UNIQUE INDEX `dni` (`dni` ASC) VISIBLE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 14
+AUTO_INCREMENT = 16
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`carrito` (
     REFERENCES `veterinaria_db`.`usuario` (`id`)
     ON DELETE CASCADE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 29
+AUTO_INCREMENT = 53
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`mascota` (
     REFERENCES `veterinaria_db`.`usuario` (`id`)
     ON DELETE CASCADE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 8
+AUTO_INCREMENT = 12
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`suscripcion` (
     REFERENCES `veterinaria_db`.`mascota` (`id`)
     ON DELETE CASCADE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 20
+AUTO_INCREMENT = 24
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -154,7 +154,7 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`vacuna_catalogo` (
   `stock` INT NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 108
+AUTO_INCREMENT = 111
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -191,7 +191,7 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`carrito_item` (
     REFERENCES `veterinaria_db`.`vacuna_catalogo` (`id`)
     ON DELETE SET NULL)
 ENGINE = InnoDB
-AUTO_INCREMENT = 57
+AUTO_INCREMENT = 100
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -220,7 +220,7 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`consulta_veterinaria` (
     REFERENCES `veterinaria_db`.`usuario` (`id`)
     ON DELETE CASCADE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 16
+AUTO_INCREMENT = 20
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -248,7 +248,7 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`pago` (
     REFERENCES `veterinaria_db`.`usuario` (`id`)
     ON DELETE CASCADE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 25
+AUTO_INCREMENT = 46
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -302,7 +302,7 @@ CREATE TABLE IF NOT EXISTS `veterinaria_db`.`vacuna_mascota` (
     REFERENCES `veterinaria_db`.`usuario` (`id`)
     ON DELETE CASCADE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 25
+AUTO_INCREMENT = 44
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
