@@ -1,5 +1,19 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
+import { Bar, Pie } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+} from 'chart.js';
+
+// Registrar componentes de Chart.js
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
 export default function Suscripciones() {
   const [todasSuscripciones, setTodasSuscripciones] = useState([]);
@@ -34,12 +48,12 @@ export default function Suscripciones() {
       filtradas = filtradas.filter(s => s.estado === 'vencida');
     } else if (mostrarPorVencer) {
       const hoy = new Date();
-      const proximos30Dias = new Date();
-      proximos30Dias.setDate(hoy.getDate() + 30);
+      const fechaLimite = new Date();
+      fechaLimite.setDate(hoy.getDate() + 30);
 
       filtradas = filtradas.filter(s => {
         const fechaFin = new Date(s.fecha_fin);
-        return fechaFin >= hoy && fechaFin <= proximos30Dias && s.estado === 'activa';
+        return fechaFin >= hoy && fechaFin <= fechaLimite && s.estado === 'activa';
       });
     } else {
       filtradas = filtradas.filter(s => s.estado === 'activa');
@@ -47,6 +61,55 @@ export default function Suscripciones() {
 
     setSuscripcionesFiltradas(filtradas);
   }, [filtroDni, mostrarVencidas, mostrarPorVencer, todasSuscripciones]);
+
+  // Datos para el gráfico de barras (activas vs vencidas)
+  const activas = todasSuscripciones.filter(s => s.estado === 'activa').length;
+  const vencidas = todasSuscripciones.filter(s => s.estado === 'vencida').length;
+
+  const barData = {
+    labels: ['Activas', 'Vencidas'],
+    datasets: [
+      {
+        label: 'Cantidad de Suscripciones',
+        data: [activas, vencidas],
+        backgroundColor: ['#4caf50', '#f44336'], // Colores para activas y vencidas
+      },
+    ],
+  };
+
+  // Datos para el gráfico de líneas (por vencer en diferentes períodos)
+  const pieData = {
+    labels: ['Por vencer en 1 mes', 'Por vencer en 2 meses', 'Por vencer en 3 meses'],
+    datasets: [
+      {
+        label: 'Suscripciones por vencer',
+        data: [
+          todasSuscripciones.filter(s => {
+            const fechaFin = new Date(s.fecha_fin);
+            const hoy = new Date();
+            const limite = new Date();
+            limite.setDate(hoy.getDate() + 30);
+            return fechaFin >= hoy && fechaFin <= limite && s.estado === 'activa';
+          }).length,
+          todasSuscripciones.filter(s => {
+            const fechaFin = new Date(s.fecha_fin);
+            const hoy = new Date();
+            const limite = new Date();
+            limite.setDate(hoy.getDate() + 60);
+            return fechaFin > new Date(hoy.setDate(hoy.getDate() + 30)) && fechaFin <= limite && s.estado === 'activa';
+          }).length,
+          todasSuscripciones.filter(s => {
+            const fechaFin = new Date(s.fecha_fin);
+            const hoy = new Date();
+            const limite = new Date();
+            limite.setDate(hoy.getDate() + 90);
+            return fechaFin > new Date(hoy.setDate(hoy.getDate() + 60)) && fechaFin <= limite && s.estado === 'activa';
+          }).length,
+        ],
+        backgroundColor: ['#ff9800', '#2196f3', '#9c27b0'], // Colores para los períodos
+      },
+    ],
+  };
 
   return (
     <div className="container">
@@ -57,7 +120,6 @@ export default function Suscripciones() {
         <div className="card-body">
           <h5 className="card-title text-secondary">Filtros</h5>
           <div className="row g-3">
-            {/* Filtro por DNI */}
             <div className="col-md-4">
               <label className="form-label">Filtrar por DNI del dueño</label>
               <input
@@ -68,8 +130,6 @@ export default function Suscripciones() {
                 onChange={e => setFiltroDni(e.target.value)}
               />
             </div>
-
-            {/* Filtro por vencidas */}
             <div className="col-md-4 d-flex align-items-end">
               <div className="form-check me-3">
                 <input
@@ -79,17 +139,13 @@ export default function Suscripciones() {
                   checked={mostrarVencidas}
                   onChange={e => {
                     setMostrarVencidas(e.target.checked);
-                    if (e.target.checked) setMostrarPorVencer(false); // Desactivar "por vencer" si se selecciona "vencidas"
+                    if (e.target.checked) setMostrarPorVencer(false);
                   }}
                 />
                 <label className="form-check-label" htmlFor="mostrarVencidas">
                   Mostrar vencidas
                 </label>
               </div>
-            </div>
-
-            {/* Filtro por vencer */}
-            <div className="col-md-4 d-flex align-items-end">
               <div className="form-check">
                 <input
                   type="checkbox"
@@ -98,11 +154,11 @@ export default function Suscripciones() {
                   checked={mostrarPorVencer}
                   onChange={e => {
                     setMostrarPorVencer(e.target.checked);
-                    if (e.target.checked) setMostrarVencidas(false); // Desactivar "vencidas" si se selecciona "por vencer"
+                    if (e.target.checked) setMostrarVencidas(false);
                   }}
                 />
                 <label className="form-check-label" htmlFor="mostrarPorVencer">
-                  Mostrar por vencer (30 días)
+                  Mostrar por vencer
                 </label>
               </div>
             </div>
@@ -162,6 +218,27 @@ export default function Suscripciones() {
           </div>
         </div>
       </div>
+
+      {/* Gráficos */}
+      <div className="row mb-4">
+        <div className="col-md-6">
+          <div className="card shadow-sm">
+            <div className="card-body">
+              <h5 className="card-title text-secondary">Activas vs Vencidas</h5>
+              <Bar data={barData} />
+            </div>
+          </div>
+        </div>
+        <div className="col-md-6">
+          <div className="card shadow-sm">
+            <div className="card-body">
+              <h5 className="card-title text-secondary">Por vencer en períodos</h5>
+              <Pie data={pieData} />
+            </div>
+          </div>
+        </div>
+      </div>          
+
     </div>
   );
 }
