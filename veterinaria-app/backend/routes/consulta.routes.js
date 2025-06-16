@@ -4,5 +4,6 @@ const { addConsulta, getConsultasByMascota } = require('../controllers/consulta.
 
 router.post('/', authMiddleware, authorizeRoles('veterinario'), addConsulta);
 router.get('/:mascotaId', authMiddleware, getConsultasByMascota);
+router.put('/:id', authMiddleware, authorizeRoles('veterinario'), consultaCtrl.updateConsulta);
 
 module.exports = router;

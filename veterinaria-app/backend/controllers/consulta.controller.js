@@ -33,3 +33,21 @@ exports.getConsultasByMascota = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.updateConsulta = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { sintomas, diagnostico, tratamiento, fecha } = req.body;
+
+    await pool.query(
+      `UPDATE consulta_veterinaria
+       SET sintomas = ?, diagnostico = ?, tratamiento = ?, fecha = ?
+       WHERE id = ?`,
+      [sintomas, diagnostico, tratamiento, fecha, id]
+    );
+
+    res.json({ message: 'Consulta actualizada correctamente' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

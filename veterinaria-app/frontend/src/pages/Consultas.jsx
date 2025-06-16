@@ -7,12 +7,12 @@ export default function Consultas() {
   const [selectedMascotaId, setSelectedMascotaId] = useState(null);
   const [consultas, setConsultas] = useState([]);
   const [form, setForm] = useState({ sintomas: '', diagnostico: '', tratamiento: '', fecha: '' });
+  const [editando, setEditando] = useState(false);
+  const [consultaId, setConsultaId] = useState(null);
 
-  // Buscar mascotas por DNI
   const buscarMascotas = async () => {
     try {
       const res = await api.get('/mascotas');
-      // Filtrar mascotas por DNI del dueño
       const mascotasFiltradas = res.data.filter(m => m.dni === dni);
       setMascotas(mascotasFiltradas);
       setSelectedMascotaId(null);
@@ -22,7 +22,6 @@ export default function Consultas() {
     }
   };
 
-  // Cargar consultas de la mascota seleccionada
   useEffect(() => {
     const fetchConsultas = async () => {
       try {
@@ -40,48 +39,67 @@ export default function Consultas() {
   const handleAdd = async e => {
     e.preventDefault();
     try {
-      await api.post('/consultas', { ...form, mascota_id: selectedMascotaId });
+      if (editando) {
+        await api.put(`/consultas/${consultaId}`, { ...form, mascota_id: selectedMascotaId });
+        alert('Consulta actualizada correctamente');
+      } else {
+        await api.post('/consultas', { ...form, mascota_id: selectedMascotaId });
+        alert('Consulta registrada correctamente');
+      }
       setForm({ sintomas: '', diagnostico: '', tratamiento: '', fecha: '' });
+      setEditando(false);
+      setConsultaId(null);
       const res = await api.get(`/consultas/${selectedMascotaId}`);
       setConsultas(res.data);
     } catch {
-      alert('Error al agregar consulta');
+      alert('Error al guardar la consulta');
     }
   };
 
+  const handleEdit = (consulta) => {
+    setForm({
+      sintomas: consulta.sintomas,
+      diagnostico: consulta.diagnostico,
+      tratamiento: consulta.tratamiento,
+      fecha: consulta.fecha?.slice(0, 10),
+    });
+    setEditando(true);
+    setConsultaId(consulta.id);
+  };
+
+  const handleCancelEdit = () => {
+    setForm({ sintomas: '', diagnostico: '', tratamiento: '', fecha: '' });
+    setEditando(false);
+    setConsultaId(null);
+  };
+
   return (
-    <div>
-      <h3>Registrar Consulta</h3>
-      {/* Paso 1: Buscar dueño por DNI */}
-      <div style={{ marginBottom: 16 }}>
+    <div className="container">
+      <h3 className="mb-4">Registrar Consulta</h3>
+      <div className="mb-3 d-flex align-items-center">
         <input
           type="text"
           placeholder="DNI del dueño"
           value={dni}
           onChange={e => setDni(e.target.value)}
-          className="form-control d-inline-block"
-          style={{ width: 200, marginRight: 8 }}
+          className="form-control me-2"
+          style={{ maxWidth: 220 }}
         />
-        <button onClick={buscarMascotas} disabled={!dni} className="btn btn-primary">Buscar Mascotas</button>
+        <button onClick={buscarMascotas} disabled={!dni} className="btn btn-primary">
+          Buscar Mascotas
+        </button>
       </div>
 
-      {/* Paso 2: Mostrar mascotas del dueño */}
       {mascotas.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
+        <div className="mb-3">
           <strong>Seleccione una mascota:</strong>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+          <ul className="list-group mt-2">
             {mascotas.map(m => (
               <li
                 key={m.id}
                 onClick={() => setSelectedMascotaId(m.id)}
-                style={{
-                  cursor: 'pointer',
-                  padding: '8px',
-                  border: m.id === selectedMascotaId ? '2px solid blue' : '1px solid #ccc',
-                  marginBottom: '6px',
-                  borderRadius: '4px',
-                  backgroundColor: m.id === selectedMascotaId ? '#eef4ff' : 'white'
-                }}
+                className={`list-group-item list-group-item-action${m.id === selectedMascotaId ? ' active' : ''}`}
+                style={{ cursor: 'pointer' }}
               >
                 {m.nombre} - {m.raza} - {m.especie}
               </li>
@@ -90,45 +108,107 @@ export default function Consultas() {
         </div>
       )}
 
-      {/* Paso 3: Formulario de consulta */}
       {selectedMascotaId && (
-        <div>
-          <form onSubmit={handleAdd} className="row g-2 align-items-center">
-            <div className="col">
-              <input name="fecha" type="date" className="form-control" onChange={handleChange} value={form.fecha} required />
+        <form onSubmit={handleAdd} className="mb-4">
+          <div className="row g-3">
+            <div className="col-md-4">
+              <label className="form-label">Fecha</label>
+              <input
+                name="fecha"
+                type="date"
+                className="form-control"
+                onChange={handleChange}
+                value={form.fecha}
+                required
+              />
             </div>
-            <div className="col">
-              <input name="sintomas" placeholder="Síntomas" className="form-control" onChange={handleChange} value={form.sintomas} required />
+            <div className="col-md-4">
+              <label className="form-label">Síntomas</label>
+              <input
+                name="sintomas"
+                placeholder="Síntomas"
+                className="form-control"
+                onChange={handleChange}
+                value={form.sintomas}
+                required
+              />
             </div>
-            <div className="col">
-              <input name="diagnostico" placeholder="Diagnóstico" className="form-control" onChange={handleChange} value={form.diagnostico} required />
+            <div className="col-md-4">
+              <label className="form-label">Diagnóstico</label>
+              <input
+                name="diagnostico"
+                placeholder="Diagnóstico"
+                className="form-control"
+                onChange={handleChange}
+                value={form.diagnostico}
+                required
+              />
             </div>
-            <div className="col">
-              <input name="tratamiento" placeholder="Tratamiento" className="form-control" onChange={handleChange} value={form.tratamiento} required />
-            </div>
-            <div className="col-auto">
-              <button className="btn btn-success">Agregar Consulta</button>
-            </div>
-          </form>
-        </div>
+          </div>
+          <div className="mt-3">
+            <label className="form-label">Tratamiento</label>
+            <textarea
+              name="tratamiento"
+              placeholder="Describa el tratamiento"
+              className="form-control"
+              rows={4}
+              onChange={handleChange}
+              value={form.tratamiento}
+              required
+            />
+          </div>
+          <div className="mt-3 d-flex gap-2">
+            <button className="btn btn-success">{editando ? 'Actualizar Consulta' : 'Registrar Consulta'}</button>
+            {editando && (
+              <button type="button" className="btn btn-secondary" onClick={handleCancelEdit}>
+                Cancelar
+              </button>
+            )}
+          </div>
+        </form>
       )}
 
-      {/* Paso 4: Historia clínica */}
       {selectedMascotaId && (
-        <div style={{ marginTop: 24 }}>
+        <div>
           <h4>Historia Clínica</h4>
-          <ul>
-            {consultas.map(c => (
-              <li key={c.id}>
-                {c.fecha?.slice(0, 10)} - {c.sintomas} - {c.diagnostico} - {c.tratamiento}
-                {c.nombre_veterinario && (
-                  <span style={{ marginLeft: 10, color: '#555', fontSize: '0.95em' }}>
-                    Veterinario: {c.nombre_veterinario}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
+          {consultas.length === 0 ? (
+            <div className="text-muted">Sin consultas registradas.</div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-bordered table-striped">
+                <thead className="table-light">
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Síntomas</th>
+                    <th>Diagnóstico</th>
+                    <th>Tratamiento</th>
+                    <th>Veterinario</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {consultas.map(c => (
+                    <tr key={c.id}>
+                      <td>{c.fecha?.slice(0, 10)}</td>
+                      <td>{c.sintomas}</td>
+                      <td>{c.diagnostico}</td>
+                      <td>{c.tratamiento}</td>
+                      <td>{c.nombre_veterinario}</td>
+                      <td>
+                        <button
+                          className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                          onClick={() => handleEdit(c)}
+                        >
+                          <i className="bi bi-pencil-square"></i>
+                          Editar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>
