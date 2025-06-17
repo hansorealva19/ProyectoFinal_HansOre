@@ -6,7 +6,10 @@ export default function Login() {
   const [form, setForm] = useState({ usuario: '', password: '' });
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
-
+  
+  // Envía los datos del formulario al backend utilizando la función login.
+  // Si el inicio de sesión es exitoso:
+  // Guarda el token y los datos del usuario en localStorage.
   const handleSubmit = async e => {
     e.preventDefault();
     try {

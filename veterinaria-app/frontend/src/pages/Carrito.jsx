@@ -23,7 +23,7 @@ export default function Carrito() {
   const [aniosSuscripcion, setAniosSuscripcion] = useState(1);
 
   const { setCarritoCount } = useCarrito();
-
+  // Recupera el DNI del dueño desde localStorage y carga el carrito asociado.
   useEffect(() => {
     const dniGuardado = localStorage.getItem('carritoDni');
     if (dniGuardado) {
@@ -34,6 +34,8 @@ export default function Carrito() {
     // eslint-disable-next-line
   }, []);
 
+  // Calcula la cantidad de ítems en el carrito y actualiza el contexto del carrito (CarritoContext).
+  // Guarda el resumen del carrito en localStorage.
   useEffect(() => {
     const count = items.reduce((sum, i) => {
       return sum + (i.tipo === 'vacuna' ? Number(i.cantidad) : 1);
@@ -42,6 +44,8 @@ export default function Carrito() {
     localStorage.setItem('carritoResumen', JSON.stringify(items));
   }, [items, setCarritoCount]);
 
+  // Carga el carrito, las mascotas, las vacunas y las suscripciones asociadas 
+  // al dueño con el DNI proporcionado.
   const confirmarDni = async (dniParam) => {
     setLoading(true);
     setMensaje('');
@@ -88,7 +92,7 @@ export default function Carrito() {
     await api.delete(`/carrito/item/${id}`, { data: { dueno_dni: dniConfirmado } });
     confirmarDni(dniConfirmado);
   };
-
+  // Realiza el pago del carrito y muestra el monto total.
   const pagar = async () => {
     if (!window.confirm('¿Confirmar pago?')) return;
     try {

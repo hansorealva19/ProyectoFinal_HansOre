@@ -65,6 +65,11 @@ export default function Layout() {
                   )}
                 </Link>
               </li>
+              <li>
+                <Link className={`nav-link${isActive('/ventas') ? ' active bg-light text-primary fw-bold' : ' text-white'}`} to="/ventas">
+                  <i className="bi bi-bar-chart me-2"></i>Ventas Diarias
+                </Link>
+              </li>
             </>
           )}
 

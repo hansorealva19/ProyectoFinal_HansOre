@@ -9,6 +9,7 @@ import Suscripciones from './pages/Suscripciones';
 import HistoriaClinica from './pages/HistoriaClinica';
 import Carrito from './pages/Carrito';
 import Perfil from './pages/Perfil';
+import Ventas from './pages/Ventas';
 
 function PrivateRoute({ children, roles }) {
   const token = localStorage.getItem('token');
@@ -74,6 +75,16 @@ export default function App() {
               </PrivateRoute>
             }
           />
+
+          <Route
+            path="ventas"
+            element={
+              <PrivateRoute roles={['veterinario']}>
+                <Ventas />
+              </PrivateRoute>
+            }
+          />
+
           <Route
             path="perfil"
             element={

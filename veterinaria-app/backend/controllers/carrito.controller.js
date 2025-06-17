@@ -67,6 +67,11 @@ exports.agregarItem = async (req, res) => {
       fecha_vencimiento
     } = req.body;
 
+    // Verificar que el usuario esté autenticado
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+
     // 1) Obtener usuario_id por DNI
     const [users] = await pool.query(
       'SELECT id FROM usuario WHERE dni = ?',
@@ -131,8 +136,8 @@ exports.agregarItem = async (req, res) => {
     await pool.query(
       `INSERT INTO carrito_item
          (carrito_id, tipo, vacuna_catalogo_id, tipo_suscripcion_id,
-          mascota_id, cantidad, precio_unitario, total, fecha_vencimiento)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          mascota_id, cantidad, precio_unitario, total, fecha_vencimiento, veterinario_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         carrito.id,
         tipo,
@@ -142,7 +147,8 @@ exports.agregarItem = async (req, res) => {
         cant,
         precio_unitario,
         total,
-        fecha_vencimiento || null
+        fecha_vencimiento || null,
+        req.user.id // Aquí se asume que el veterinario está autenticado
       ]
     );
 
@@ -173,10 +179,9 @@ exports.eliminarItem = async (req, res) => {
     const usuario_id = users[0].id;
 
     const [items] = await pool.query(
-      `SELECT ci.*
-         FROM carrito_item ci
-         JOIN carrito c ON ci.carrito_id = c.id
-        WHERE ci.id = ? AND c.usuario_id = ? AND c.estado = 'activo'`,
+      `SELECT ci.* FROM carrito_item ci
+       JOIN carrito c ON ci.carrito_id = c.id
+       WHERE ci.id = ? AND c.usuario_id = ? AND c.estado = 'activo'`,
       [itemId, usuario_id]
     );
     if (items.length === 0) {
@@ -336,6 +341,45 @@ exports.pagarCarrito = async (req, res) => {
     res.json({ monto_total });
   } catch (error) {
     console.error('pagarCarrito error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Obtener ventas diarias
+exports.getVentasDiarias = async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT 
+        DATE(p.fecha_pago) AS fecha, -- Fecha de la venta
+        ci.tipo, -- Tipo de venta (vacuna o suscripción)
+        u.nombres AS veterinario, -- Nombre del veterinario que realizó la venta
+        COUNT(ci.id) AS cantidad, -- Cantidad de ventas realizadas
+        SUM(ci.total) AS total -- Total de las ventas
+      FROM pago p
+      JOIN carrito_item ci ON p.carrito_id = ci.carrito_id
+      JOIN usuario u ON ci.veterinario_id = u.id -- Relación con el veterinario que realizó la venta
+      WHERE ci.tipo IN ('vacuna', 'suscripcion')
+      GROUP BY fecha, ci.tipo, veterinario
+      ORDER BY fecha DESC;
+    `);
+
+    // Estructurar los datos para facilitar su uso en el frontend
+    const ventasPorVeterinario = rows.reduce((acc, row) => {
+      if (!acc[row.veterinario]) {
+        acc[row.veterinario] = [];
+      }
+      acc[row.veterinario].push({
+        fecha: row.fecha,
+        tipo: row.tipo,
+        cantidad: row.cantidad,
+        total: row.total,
+      });
+      return acc;
+    }, {});
+
+    res.json(ventasPorVeterinario);
+  } catch (error) {
+    console.error('Error en getVentasDiarias:', error.message);
     res.status(500).json({ error: error.message });
   }
 };

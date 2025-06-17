@@ -9,7 +9,7 @@ export default function Consultas() {
   const [form, setForm] = useState({ sintomas: '', diagnostico: '', tratamiento: '', fecha: '' });
   const [editando, setEditando] = useState(false);
   const [consultaId, setConsultaId] = useState(null);
-
+  // Filtra las mascotas asociadas al dueño con el DNI proporcionado.
   const buscarMascotas = async () => {
     try {
       const res = await api.get('/mascotas');
@@ -21,7 +21,7 @@ export default function Consultas() {
       alert('Error al buscar mascotas');
     }
   };
-
+  // Carga las consultas asociadas a la mascota seleccionada.
   useEffect(() => {
     const fetchConsultas = async () => {
       try {
@@ -35,7 +35,7 @@ export default function Consultas() {
   }, [selectedMascotaId]);
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
-
+  // Registra una nueva consulta o actualiza una existente.
   const handleAdd = async e => {
     e.preventDefault();
     try {
@@ -55,7 +55,8 @@ export default function Consultas() {
       alert('Error al guardar la consulta');
     }
   };
-
+  // Carga los datos de una consulta en el formulario para editarla.
+  // Cambia el estado editando a true y almacena el ID de la consulta.
   const handleEdit = (consulta) => {
     setForm({
       sintomas: consulta.sintomas,
@@ -66,7 +67,7 @@ export default function Consultas() {
     setEditando(true);
     setConsultaId(consulta.id);
   };
-
+  
   const handleCancelEdit = () => {
     setForm({ sintomas: '', diagnostico: '', tratamiento: '', fecha: '' });
     setEditando(false);

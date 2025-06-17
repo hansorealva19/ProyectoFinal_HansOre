@@ -17,4 +17,7 @@ router.delete('/vaciar', authMiddleware, authorizeRoles('veterinario'), carritoC
 // Simular pago
 router.post('/pagar', authMiddleware, authorizeRoles('veterinario'), carritoCtrl.pagarCarrito);
 
+// Reporte de ventas diarias
+router.get('/ventas-diarias', authMiddleware, authorizeRoles('veterinario'), carritoCtrl.getVentasDiarias);
+
 module.exports = router;

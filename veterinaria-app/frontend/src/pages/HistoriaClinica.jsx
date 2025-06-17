@@ -14,7 +14,8 @@ export default function HistoriaClinica() {
   const [suscripciones, setSuscripciones] = useState([]);
   const [subiendo, setSubiendo] = useState(false);
   const [mensaje, setMensaje] = useState('');
-
+  // Carga la historia clínica completa de la mascota 
+  // (datos, consultas, vacunas y suscripciones) desde el backend.
   useEffect(() => {
     const fetchAll = async () => {
       try {
@@ -29,7 +30,7 @@ export default function HistoriaClinica() {
     };
     fetchAll();
   }, [id]);
-
+  
   // Subir imagen a Cloudinary
   const handleFileChange = async e => {
     const file = e.target.files[0];

@@ -14,7 +14,7 @@ export default function Mascotas({ setSelectedMascotaId }) {
   const [mostrarFormulario, setMostrarFormulario] = useState(false); // Controla la visibilidad del formulario
   const navigate = useNavigate();
 
-  // Cargar mascotas (todas o solo las del dueño)
+  // Cargar mascotas desde backend
   const fetchMascotas = async () => {
     try {
       const res = await api.get('/mascotas');
@@ -24,7 +24,7 @@ export default function Mascotas({ setSelectedMascotaId }) {
       alert('Error al cargar mascotas: ' + (err.response?.data?.error || err.message));
     }
   };
-
+  // Cargar mascotas al montar el componente
   useEffect(() => {
     fetchMascotas();
   }, []);
